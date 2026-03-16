@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextNodes Panel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="brand-icon">⬡</span>
+      <span class="brand-name">NextNodes</span>
+    </div>
+    <nav class="navbar-links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#nodes">Nodes</a>
+      <a href="#settings">Settings</a>
+    </nav>
+    <button class="btn btn-primary" id="loginBtn">Login</button>
+  </header>
+
+  <!-- Hero / Welcome Section -->
+  <main>
+    <section class="hero">
+      <h1>Welcome to <span class="highlight">NextNodes Panel</span></h1>
+      <p class="hero-subtitle">A simple, modern control panel ready for customisation.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="getStartedBtn">Get Started</button>
+        <button class="btn btn-secondary">Learn More</button>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats" id="dashboard">
+      <div class="stat-card">
+        <span class="stat-icon">🖥️</span>
+        <h2 class="stat-value" id="nodeCount">0</h2>
+        <p class="stat-label">Active Nodes</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📡</span>
+        <h2 class="stat-value">99.9<small>%</small></h2>
+        <p class="stat-label">Uptime</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⚡</span>
+        <h2 class="stat-value">12<small>ms</small></h2>
+        <p class="stat-label">Avg. Latency</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🔒</span>
+        <h2 class="stat-value">SSL</h2>
+        <p class="stat-label">Secured</p>
+      </div>
+    </section>
+
+    <!-- Nodes Table Section -->
+    <section class="section" id="nodes">
+      <h2 class="section-title">Nodes</h2>
+      <div class="table-wrapper">
+        <table class="nodes-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Region</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="nodesTableBody">
+            <!-- Rows injected by main.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section class="section" id="settings">
+      <h2 class="section-title">Settings</h2>
+      <div class="settings-form">
+        <div class="form-group">
+          <label for="panelName">Panel Name</label>
+          <input type="text" id="panelName" value="NextNodes Panel" />
+        </div>
+        <div class="form-group">
+          <label for="apiUrl">API URL</label>
+          <input type="text" id="apiUrl" placeholder="https://api.example.com" />
+        </div>
+        <div class="form-group">
+          <label for="themeSelect">Theme</label>
+          <select id="themeSelect">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2026 NextNodes Panel · Built to be modified</p>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
