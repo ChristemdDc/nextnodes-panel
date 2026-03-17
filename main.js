@@ -132,10 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (authService) {
                 authService.logout();
                 closeLogoutModal();
-                navigate('auth-login');
+                // En lugar de auth-login que no existe, volvemos al estado inicial
+                navigate('dashboard');
+                window.location.reload(); // Recargar para limpiar todo el estado de golpe
             }
         });
     }
+
+    const logoutBtnTop = document.getElementById('logoutBtnTop');
+
+    // The original `logoutBtn` variable is not defined in this scope.
+    // Assuming `confirmLogoutBtn` is the primary logout trigger from the modal.
+    // The instruction implies `logoutBtn` might be another element, but it's not in the provided code.
+    // For now, only `logoutBtnTop` is handled as per the instruction.
+    if (logoutBtnTop) logoutBtnTop.addEventListener('click', () => authService.logout());
 
     if (cancelLogoutBtn) {
         cancelLogoutBtn.addEventListener('click', closeLogoutModal);
@@ -147,51 +157,51 @@ document.addEventListener('DOMContentLoaded', () => {
             closeLogoutModal();
         }
     });
-
     /**
      * Actualiza la interfaz de usuario con los datos del usuario
      */
     function updateUserUI() {
         const userBadge = document.getElementById('userDisplayName');
         const loginBtn = document.getElementById('loginBtn');
+        const logoutBtnTop = document.getElementById('logoutBtnTop');
         
         if (!userBadge || !loginBtn) return;
 
         const statusText = userBadge.querySelector('.status-text');
 
         console.log('[DEBUG] updateUserUI running. authService ready?', !!authService);
-        if (authService) {
-            console.log('[DEBUG] isAuthenticated?', authService.isAuthenticated());
-        }
-
         if (authService && authService.isAuthenticated()) {
             const user = authService.getCurrentUser();
-            console.log('[DEBUG] User found:', user);
-            if (statusText) statusText.textContent = `Bienvenido, ${user.name || user.email}`;
+            console.log('[DEBUG] User is authenticated:', user);
             
-            userBadge.classList.remove('waiting');
-            userBadge.classList.add('logged-in');
+            // Show username in red box area (navbar center)
+            if (statusText) {
+                // Try different properties based on common auth response patterns
+                statusText.textContent = user.name || user.displayName || user.username || user.email || 'Usuario';
+            }
+            userBadge.classList.remove('hidden');
             
-            loginBtn.textContent = 'Logout';
-            loginBtn.classList.remove('btn-primary');
-            loginBtn.classList.add('btn-outline');
+            // Handle Green Box area (Logout after login)
+            if (loginBtn) loginBtn.classList.add('hidden');
+            if (logoutBtnTop) logoutBtnTop.classList.remove('hidden');
         } else {
-            if (statusText) statusText.textContent = 'Esperando inicio de sesión...';
+            console.log('[DEBUG] User is not authenticated');
+            if (statusText) statusText.textContent = 'Bienvenido';
+            userBadge.classList.add('hidden');
             
-            userBadge.classList.add('waiting');
-            userBadge.classList.remove('logged-in');
-            
-            loginBtn.textContent = 'Login';
-            loginBtn.classList.add('btn-primary');
-            loginBtn.classList.remove('btn-outline');
+            if (loginBtn) loginBtn.classList.remove('hidden');
+            if (logoutBtnTop) logoutBtnTop.classList.add('hidden');
         }
     }
 
     // Hacer disponible globalmente para AuthService
     window.updateUserUI = updateUserUI;
 
-    // Inicializar UI de usuario al cargar
-    setTimeout(updateUserUI, 500);
+    // Inicializar UI de usuario inmediatamente
+    updateUserUI();
+    
+    // Y de nuevo cuando el DOM esté completamente cargado para asegurar que AuthService existe
+    document.addEventListener('DOMContentLoaded', updateUserUI);
 
     disconnectBtn.addEventListener('click', () => {
         if(confirm("Are you sure you want to disconnect?")) {
@@ -283,15 +293,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     function updateStatus(online) {
+        const statusText = document.getElementById('serverStatusText');
         if (online) {
-            serverStatus.textContent = 'Connected';
+            if (statusText) statusText.textContent = 'Connected';
             serverStatus.classList.remove('status-offline');
             serverStatus.classList.add('status-online');
             linkBtn.classList.add('hidden');
             disconnectBtn.classList.remove('hidden');
             loadGroups(); // Cargar grupos al conectar
+            loadUsersList(); // Cargar usuarios al conectar
+            
+            // Actualizar uptime si está disponible en state o mock
+            const uptimeEl = document.getElementById('uptime');
+            if (uptimeEl && uptimeEl.textContent === '--') {
+                uptimeEl.textContent = 'Online';
+            }
         } else {
-            serverStatus.textContent = 'Disconnected';
+            if (statusText) statusText.textContent = 'Disconnected';
             serverStatus.classList.add('status-offline');
             serverStatus.classList.remove('status-online');
             linkBtn.classList.remove('hidden');
