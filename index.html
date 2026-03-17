@@ -5,30 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NextNodes Panel</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="auth-styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="navbar-brand">
-      <span class="brand-icon">⬡</span>
-      <span class="brand-name">NextNodes</span>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <span class="brand-icon">⬡</span>
+        <span class="brand-name">NextNodes</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
-    <nav class="navbar-links">
-      <a href="#" class="nav-link active" data-target="dashboard">Dashboard</a>
-      <a href="#" class="nav-link" data-target="groups">Groups</a>
-      <a href="#" class="nav-link" data-target="users">Users</a>
-      <a href="#" class="nav-link" data-target="settings">Settings</a>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-link active" data-target="dashboard" data-icon="📊">Dashboard</a>
+      <a href="#" class="nav-link" data-target="groups" data-icon="👥">Groups</a>
+      <a href="#" class="nav-link" data-target="users" data-icon="👤">Users</a>
+      <a href="#" class="nav-link" data-target="settings" data-icon="⚙️">Settings</a>
     </nav>
-    <div class="navbar-actions">
-      <span id="serverStatus" class="status-badge status-offline">Disconnected</span>
-      <button class="btn btn-outline" id="linkServerBtn">Link Server</button>
-      <button class="btn btn-danger hidden" id="disconnectBtn" style="margin-left: 0.5rem;">Disconnect</button>
+    <div class="sidebar-actions">
+      <span id="serverStatus" class="status-badge status-offline" data-icon="⚫">Disconnected</span>
+      <button class="btn btn-outline" id="linkServerBtn" data-icon="🔗">Link Server</button>
+      <button class="btn btn-danger hidden" id="disconnectBtn" data-icon="❌">Disconnect</button>
     </div>
-  </header>
+  </aside>
 
   <main>
+    <!-- Top Navigation Bar -->
+    <nav class="top-navbar">
+      <div class="navbar-content">
+        <div class="nav-left-placeholder"></div>
+        <div id="userDisplayName" class="user-status-badge waiting">
+          <span class="status-dot"></span>
+          <span class="status-text">Esperando inicio de sesión...</span>
+        </div>
+        <div id="loginBtnArea">
+          <button class="btn btn-primary" id="loginBtn">Login</button>
+        </div>
+      </div>
+    </nav>
+
     <!-- Link Server View -->
     <section id="link-view" class="view hidden">
       <div class="link-container">
@@ -288,8 +310,233 @@
       </div>
     </section>
 
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p>&copy; 2026 Lucerion. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="#" id="privacyLink" class="footer-link">Privacy Policy</a>
+          <span class="footer-separator">|</span>
+          <a href="#" id="termsLink" class="footer-link">Terms & Conditions</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Política de Privacidad de NextNodes</h2>
+          <button class="modal-close" id="closePrivacyBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <h3>1. Introducción</h3>
+          <p>Esta Política de Privacidad explica qué datos recopila NextNodes, cómo los utiliza, con quién puede compartirlos y qué derechos tienen los usuarios.</p>
+
+          <h3>2. Responsable del tratamiento</h3>
+          <ul>
+            <li>Nombre o razón social: <strong>Lucerion</strong></li>
+            <li>Correo: <strong>lucerion.studios@outlook.com</strong></li>
+            <li>Domicilio o identificación legal: <strong>[Pendiente]</strong></li>
+            <li>País / jurisdicción: <strong>[Pendiente]</strong></li>
+          </ul>
+
+          <h3>3. Datos que podemos recopilar</h3>
+          <h4>3.1 Datos de cuenta</h4>
+          <ul>
+            <li>correo electrónico</li>
+            <li>username o nombre visible</li>
+            <li>hash de contraseña</li>
+            <li>identificadores internos de cuenta</li>
+          </ul>
+
+          <h4>3.2 Datos de autenticación externa</h4>
+          <p>Si el usuario inicia sesión con Google u otro proveedor, podemos recibir identificadores y datos básicos autorizados por dicho proveedor.</p>
+
+          <h4>3.3 Datos técnicos y de seguridad</h4>
+          <ul>
+            <li>IP</li>
+            <li>user-agent</li>
+            <li>fechas y horas de acceso</li>
+            <li>eventos de login, logout, bloqueos y verificaciones</li>
+            <li>identificadores de sesión o datos técnicos equivalentes</li>
+          </ul>
+
+          <h4>3.4 Datos operativos</h4>
+          <ul>
+            <li>identificadores de servidor vinculados</li>
+            <li>claves o estados de vinculación</li>
+            <li>grupos, permisos, configuraciones y auditoría generada en el uso del panel</li>
+          </ul>
+
+          <h3>4. Finalidades del tratamiento</h3>
+          <p>Usamos los datos para:</p>
+          <ul>
+            <li>crear y administrar cuentas;</li>
+            <li>autenticar usuarios;</li>
+            <li>verificar correos;</li>
+            <li>operar el panel;</li>
+            <li>vincular servidores;</li>
+            <li>prevenir fraude, bots y accesos no autorizados;</li>
+            <li>mantener, depurar y mejorar el servicio;</li>
+            <li>cumplir obligaciones legales.</li>
+          </ul>
+
+          <h3>5. Base legal</h3>
+          <p>La base legal podrá incluir ejecución contractual, interés legítimo, cumplimiento de obligaciones legales o consentimiento, según la jurisdicción aplicable.</p>
+
+          <h3>6. Verificación y antiabuso</h3>
+          <p>Podemos enviar códigos de verificación, enlaces temporales y aplicar controles de seguridad como límites de intentos, bloqueos temporales o medidas anti-bot.</p>
+
+          <h3>7. Cookies y tecnologías similares</h3>
+          <p>Podemos utilizar cookies, almacenamiento local y tecnologías similares para sesiones, seguridad, preferencias y funcionamiento del sitio.</p>
+
+          <h3>8. Compartición de datos</h3>
+          <p>Los datos podrán compartirse con proveedores de hosting, correo, autenticación, seguridad, analítica o autoridades cuando exista base legal suficiente. No vendemos datos personales.</p>
+
+          <h3>9. Transferencias internacionales</h3>
+          <p>Según la infraestructura utilizada, los datos podrán ser tratados fuera del país del usuario.</p>
+
+          <h3>10. Conservación</h3>
+          <p>Conservamos los datos durante el tiempo necesario para prestar el servicio, mantener la seguridad, cumplir obligaciones legales y resolver disputas.</p>
+
+          <h3>11. Seguridad</h3>
+          <p>Aplicamos medidas técnicas y organizativas razonables para proteger la información, aunque no puede garantizarse seguridad absoluta.</p>
+
+          <h3>12. Derechos del usuario</h3>
+          <p>Cuando corresponda legalmente, el usuario podrá solicitar acceso, rectificación, supresión, actualización, limitación, oposición o portabilidad.</p>
+
+          <h3>13. Menores de edad</h3>
+          <p>El servicio no está dirigido intencionalmente a menores sin la autorización que legalmente corresponda.</p>
+
+          <h3>14. Terceros</h3>
+          <p>El sitio puede contener integraciones o enlaces a servicios de terceros. Recomendamos revisar sus políticas.</p>
+
+          <h3>15. Cambios a esta política</h3>
+          <p>Podemos actualizar esta política en cualquier momento. La versión vigente será la publicada en el sitio.</p>
+
+          <h3>16. Contacto</h3>
+          <ul>
+            <li>Responsable / titular: <strong>Lucerion</strong></li>
+            <li>Correo: <strong>support@lucerion.com</strong></li>
+            <li>Domicilio o identificación legal: <strong>[Pendiente]</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Términos y Condiciones de NextNodes</h2>
+          <button class="modal-close" id="closeTermsBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <h3>1. Aceptación</h3>
+          <p>Al acceder o utilizar el panel web, sitio o servicios de NextNodes, el usuario acepta estos Términos y Condiciones.</p>
+
+          <h3>2. Descripción del servicio</h3>
+          <p>NextNodes es una plataforma para administrar permisos, grupos, rangos, configuraciones, vínculos de servidor y funciones relacionadas.</p>
+
+          <h3>3. Cuentas</h3>
+          <p>El usuario debe proporcionar información veraz y mantener la confidencialidad de sus credenciales. El titular del servicio podrá suspender cuentas por abuso, fraude, automatización no autorizada o incumplimiento.</p>
+
+          <h3>4. Verificación de correo</h3>
+          <p>El servicio puede exigir validación de correo mediante código, enlace temporal u otro mecanismo equivalente.</p>
+
+          <h3>5. Inicio de sesión con terceros</h3>
+          <p>El servicio puede ofrecer autenticación mediante Google u otros proveedores. El uso de dichos proveedores también queda sujeto a sus propios términos y políticas.</p>
+
+          <h3>6. Seguridad</h3>
+          <p>El usuario debe proteger sus credenciales y notificar accesos sospechosos. El servicio puede aplicar controles como rate limiting, bloqueo temporal o reautenticación.</p>
+
+          <h3>7. Vinculación de servidores</h3>
+          <p>Las claves de vinculación o tokens de emparejamiento pueden ser de un solo uso, temporales, revocables y sujetas a medidas de seguridad adicionales.</p>
+
+          <h3>8. Uso permitido</h3>
+          <p>Se prohíbe:</p>
+          <ul>
+            <li>eludir autenticación o autorización;</li>
+            <li>automatizar accesos sin autorización;</li>
+            <li>interferir con cuentas, servidores o paneles de terceros;</li>
+            <li>usar el servicio con fines ilícitos o abusivos.</li>
+          </ul>
+
+          <h3>9. Datos del usuario</h3>
+          <p>El usuario conserva titularidad sobre sus datos, configuraciones y contenido, pero autoriza su tratamiento en la medida necesaria para operar el servicio.</p>
+
+          <h3>10. Disponibilidad</h3>
+          <p>El servicio podrá modificarse, interrumpirse o suspenderse por mantenimiento, seguridad, mejoras o causas técnicas.</p>
+
+          <h3>11. Propiedad intelectual</h3>
+          <p>Salvo indicación en contrario, el software, interfaz, documentación y materiales de NextNodes son propiedad de su titular o se usan bajo licencia.</p>
+
+          <h3>12. Servicios de terceros</h3>
+          <p>NextNodes puede depender de servicios externos como proveedores de correo, autenticación, hosting, repositorios o infraestructura.</p>
+
+          <h3>13. Limitación de responsabilidad</h3>
+          <p>En la máxima medida permitida por la ley, el titular no será responsable por daños indirectos, pérdida de datos, interrupciones o problemas derivados del uso del servicio.</p>
+
+          <h3>14. Terminación</h3>
+          <p>El titular podrá suspender o cancelar accesos cuando exista incumplimiento, riesgo de seguridad, fraude o abuso.</p>
+
+          <h3>15. Privacidad</h3>
+          <p>El tratamiento de datos personales se rige además por la Política de Privacidad de NextNodes.</p>
+
+          <h3>16. Modificaciones</h3>
+          <p>Estos términos pueden ser actualizados en cualquier momento. La versión vigente será la publicada en el sitio.</p>
+
+          <h3>17. Ley aplicable y jurisdicción</h3>
+          <p>Se regirán por las leyes de la jurisdicción correspondiente y cualquier controversia se someterá a los tribunales competentes.</p>
+
+          <h3>18. Contacto</h3>
+          <ul>
+            <li>Responsable / titular: <strong>Lucerion</strong></li>
+            <li>Correo: <strong>support@lucerion.com</strong></li>
+            <li>Domicilio o identificación legal: <strong>[Pendiente]</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Logout) -->
+    <div id="confirmLogoutModal" class="modal hidden" style="z-index: 3000;">
+      <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-body" style="padding: 2.5rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🚪</div>
+          <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">¿Cerrar sesión?</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 2rem;">Tendrás que volver a autenticarte para acceder a tu panel.</p>
+          
+          <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="cancelLogoutBtn" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+            <button id="confirmLogoutSubmitBtn" class="btn btn-primary" style="flex: 1;">Finalizar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- General Information Modal (Alert Replacement) -->
+    <div id="generalInfoModal" class="modal hidden" style="z-index: 4000;">
+      <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-body" style="padding: 2.5rem;">
+          <div id="infoModalIcon" style="font-size: 3rem; margin-bottom: 1rem;">ℹ️</div>
+          <h2 id="infoModalTitle" style="color: var(--text-primary); margin-bottom: 0.5rem;">Atención</h2>
+          <p id="infoModalMessage" style="color: var(--text-secondary); margin-bottom: 2rem;">Mensaje del sistema.</p>
+          
+          <div style="display: flex; justify-content: center;">
+            <button id="closeInfoModalBtn" class="btn btn-primary" style="width: 100%;">Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
+  <script src="config.js"></script>
+  <script src="helpers.js"></script>
+  <script src="auth-validation.js"></script>
+  <script src="auth-service.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

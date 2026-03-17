@@ -6,37 +6,70 @@ document.addEventListener('DOMContentLoaded', () => {
         linked: false,
         token: null,
         groups: [],
-        currentProfileUuid: null // Track current profile
+        currentProfileUuid: null, // Track current profile
+        sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
     };
 
     // DOM Elements
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const mainContent = document.querySelector('main');
     const views = document.querySelectorAll('.view');
     const navLinks = document.querySelectorAll('.nav-link');
     const linkBtn = document.getElementById('linkServerBtn');
+    const loginBtn = document.getElementById('loginBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
     const serverStatus = document.getElementById('serverStatus');
     const apiUrlInput = document.getElementById('apiUrl');
+    
+    // Sidebar toggle functionality
+    function toggleSidebar() {
+        state.sidebarCollapsed = !state.sidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', state.sidebarCollapsed);
+        
+        if (state.sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('collapsed');
+        }
+    }
+    
+    // Initialize sidebar state
+    if (state.sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        mainContent.classList.add('collapsed');
+    }
+    
+    // Event listener for toggle button
+    sidebarToggle.addEventListener('click', toggleSidebar);
     
     // Init Settings
     apiUrlInput.value = state.apiUrl;
 
     // Navigation
     function navigate(targetId) {
+        // Hide ALL views first
         views.forEach(view => {
             view.classList.add('hidden');
             view.classList.remove('active');
         });
-        
+
+        // Show the specific normal view
         const targetView = document.getElementById(`${targetId}-view`);
         if (targetView) {
             targetView.classList.remove('hidden');
             targetView.classList.add('active');
         }
-        
+
         navLinks.forEach(link => {
             link.classList.toggle('active', link.dataset.target === targetId);
         });
     }
+    
+    // Expose navigate globally
+    window.navigate = navigate;
     
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -46,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'settings' || state.linked) {
                 if (target) navigate(target);
             } else {
-                alert("Please link a server first.");
+                showInfoModal('Vinculación Requerida', '⚠️', 'Por favor, vincula un servidor de Minecraft primero para acceder a esta sección.');
             }
         });
     });
@@ -54,6 +87,114 @@ document.addEventListener('DOMContentLoaded', () => {
     linkBtn.addEventListener('click', () => {
         navigate('link');
     });
+
+    loginBtn.addEventListener('click', () => {
+        if (authService && authService.isAuthenticated()) {
+            openLogoutModal();
+        } else {
+            window.location.href = 'auth.html';
+        }
+    });
+
+    // Redirección si no está autenticado
+    function checkAuth() {
+        console.log('[DEBUG] checkAuth running. authService ready?', typeof authService !== 'undefined');
+        if (typeof authService !== 'undefined') {
+             console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
+             if (!authService.isAuthenticated()) {
+                console.log('🔒 No autenticado. Redirigiendo a auth.html');
+                window.location.href = 'auth.html';
+             }
+        }
+    }
+
+    // Ejecutar check de auth (excepto si ya estamos en un proceso de carga o similar)
+    setTimeout(checkAuth, 500);
+
+    /**
+     * Lógica del Modal de Logout Personalizado
+     */
+    const logoutModal = document.getElementById('confirmLogoutModal');
+    const confirmLogoutBtn = document.getElementById('confirmLogoutSubmitBtn');
+    const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+
+    function openLogoutModal() {
+        if (logoutModal) {
+            logoutModal.classList.remove('hidden');
+        }
+    }
+
+    function closeLogoutModal() {
+        if (logoutModal) {
+            logoutModal.classList.add('hidden');
+        }
+    }
+
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', () => {
+            if (authService) {
+                authService.logout();
+                closeLogoutModal();
+                navigate('auth-login');
+            }
+        });
+    }
+
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+    }
+
+    // Cerrar al hacer clic fuera del contenido
+    window.addEventListener('click', (e) => {
+        if (e.target === logoutModal) {
+            closeLogoutModal();
+        }
+    });
+
+    /**
+     * Actualiza la interfaz de usuario con los datos del usuario
+     */
+    function updateUserUI() {
+        const userBadge = document.getElementById('userDisplayName');
+        const loginBtn = document.getElementById('loginBtn');
+        
+        if (!userBadge || !loginBtn) return;
+
+        const statusText = userBadge.querySelector('.status-text');
+
+        console.log('[DEBUG] updateUserUI running. authService ready?', !!authService);
+        if (authService) {
+            console.log('[DEBUG] isAuthenticated?', authService.isAuthenticated());
+        }
+
+        if (authService && authService.isAuthenticated()) {
+            const user = authService.getCurrentUser();
+            console.log('[DEBUG] User found:', user);
+            if (statusText) statusText.textContent = `Bienvenido, ${user.name || user.email}`;
+            
+            userBadge.classList.remove('waiting');
+            userBadge.classList.add('logged-in');
+            
+            loginBtn.textContent = 'Logout';
+            loginBtn.classList.remove('btn-primary');
+            loginBtn.classList.add('btn-outline');
+        } else {
+            if (statusText) statusText.textContent = 'Esperando inicio de sesión...';
+            
+            userBadge.classList.add('waiting');
+            userBadge.classList.remove('logged-in');
+            
+            loginBtn.textContent = 'Login';
+            loginBtn.classList.add('btn-primary');
+            loginBtn.classList.remove('btn-outline');
+        }
+    }
+
+    // Hacer disponible globalmente para AuthService
+    window.updateUserUI = updateUserUI;
+
+    // Inicializar UI de usuario al cargar
+    setTimeout(updateUserUI, 500);
 
     disconnectBtn.addEventListener('click', () => {
         if(confirm("Are you sure you want to disconnect?")) {
@@ -69,8 +210,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = apiUrlInput.value.replace(/\/$/, '');
         state.apiUrl = url;
         localStorage.setItem('apiUrl', url);
-        alert('Settings saved');
+        showInfoModal('Ajustes Guardados', '⚙️', 'La configuración del API se ha actualizado correctamente.');
         checkServerStatus();
+    });
+
+    /**
+     * Lógica de Modal Informativo General
+     */
+    const infoModal = document.getElementById('generalInfoModal');
+    const infoTitle = document.getElementById('infoModalTitle');
+    const infoMsg = document.getElementById('infoModalMessage');
+    const infoIcon = document.getElementById('infoModalIcon');
+    const closeInfoBtn = document.getElementById('closeInfoModalBtn');
+
+    function showInfoModal(title, icon, message) {
+        if (!infoModal) return;
+        if (infoTitle) infoTitle.textContent = title;
+        if (infoIcon) infoIcon.textContent = icon;
+        if (infoMsg) infoMsg.textContent = message;
+        infoModal.classList.remove('hidden');
+    }
+
+    if (closeInfoBtn) {
+        closeInfoBtn.addEventListener('click', () => {
+            infoModal.classList.add('hidden');
+        });
+    }
+
+    // Cerrar al hacer clic fuera
+    window.addEventListener('click', (e) => {
+        if (e.target === infoModal) {
+            infoModal.classList.add('hidden');
+        }
     });
 
     // Link Logic
@@ -825,4 +996,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Init
     checkServerStatus();
+
+    // Footer Modals
+    const privacyLink = document.getElementById('privacyLink');
+    const termsLink = document.getElementById('termsLink');
+    const privacyModal = document.getElementById('privacyModal');
+    const termsModal = document.getElementById('termsModal');
+    const closePrivacyBtn = document.getElementById('closePrivacyBtn');
+    const closeTermsBtn = document.getElementById('closeTermsBtn');
+
+    // Privacy Policy
+    privacyLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        privacyModal.classList.remove('hidden');
+    });
+
+    closePrivacyBtn.addEventListener('click', () => {
+        privacyModal.classList.add('hidden');
+    });
+
+    privacyModal.addEventListener('click', (e) => {
+        if (e.target === privacyModal) {
+            privacyModal.classList.add('hidden');
+        }
+    });
+
+    // Terms & Conditions
+    termsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        termsModal.classList.remove('hidden');
+    });
+
+    closeTermsBtn.addEventListener('click', () => {
+        termsModal.classList.add('hidden');
+    });
+
+    termsModal.addEventListener('click', (e) => {
+        if (e.target === termsModal) {
+            termsModal.classList.add('hidden');
+        }
+    });
 });
