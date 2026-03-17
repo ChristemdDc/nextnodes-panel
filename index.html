@@ -17,22 +17,26 @@
         <span class="brand-icon">⬡</span>
         <span class="brand-name">NextNodes</span>
       </div>
-      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
     </div>
     <nav class="sidebar-nav">
-      <a href="#" class="nav-link active" data-target="dashboard" data-icon="📊">Dashboard</a>
-      <a href="#" class="nav-link" data-target="groups" data-icon="👥">Groups</a>
-      <a href="#" class="nav-link" data-target="users" data-icon="👤">Users</a>
-      <a href="#" class="nav-link" data-target="settings" data-icon="⚙️">Settings</a>
+      <a href="#" class="nav-link active" data-target="dashboard" data-icon="🧱">Dashboard</a>
+      <a href="#" class="nav-link" data-target="groups" data-icon="🛡️">Groups</a>
+      <a href="#" class="nav-link" data-target="users" data-icon="⚔️">Users</a>
+      <a href="#" class="nav-link" data-target="settings" data-icon="🛠️">Settings</a>
     </nav>
     <div class="sidebar-actions">
       <span id="serverStatus" class="status-badge status-offline" data-icon="⚫">Disconnected</span>
       <button class="btn btn-outline" id="linkServerBtn" data-icon="🔗">Link Server</button>
       <button class="btn btn-danger hidden" id="disconnectBtn" data-icon="❌">Disconnect</button>
+    </div>
+
+    <!-- Toggle moved to bottom -->
+    <div class="sidebar-footer">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </aside>
 

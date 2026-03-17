@@ -96,19 +96,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Redirección si no está autenticado
+    // Redirección si no está autenticado (Desactivado para permitir vista previa)
     function checkAuth() {
         console.log('[DEBUG] checkAuth running. authService ready?', typeof authService !== 'undefined');
         if (typeof authService !== 'undefined') {
              console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
-             if (!authService.isAuthenticated()) {
-                console.log('🔒 No autenticado. Redirigiendo a auth.html');
-                window.location.href = 'auth.html';
-             }
+             // No redirigimos automáticamente para permitir que el usuario vea el panel
         }
     }
 
-    // Ejecutar check de auth (excepto si ya estamos en un proceso de carga o similar)
+    // Ejecutar check de auth sutil
     setTimeout(checkAuth, 500);
 
     /**
