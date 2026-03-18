@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextNodes - Authentication</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="auth-styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    /* Sobrescribir el layout de dashboard para la página de auth */
+    body.auth-page {
+      display: block; /* Desactivar flex row del dashboard */
+      background-color: var(--bg-dark);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .auth-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 2rem;
+      background: radial-gradient(circle at center, rgba(99, 102, 241, 0.05) 0%, rgba(15, 15, 19, 1) 100%);
+    }
+
+    #auth-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* Asegurar que las vistas ocupen el espacio necesario */
+    .view {
+      padding: 0;
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="auth-page">
+  <div class="auth-wrapper">
+    <div id="auth-container">
+    
+    <!-- 1. Login View -->
+    <section id="auth-login-view" class="view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Iniciar Sesión</h1>
+            <p>Accede a tu panel de NextNodes</p>
+          </div>
+
+          <div id="auth-login-message" class="auth-message" style="display: none;"></div>
+
+          <form id="auth-login-form" class="auth-form" onsubmit="event.preventDefault(); return false;">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input 
+                type="email" 
+                id="login-email" 
+                name="email" 
+                placeholder="tu@email.com" 
+                required
+              />
+              <span class="error" id="login-email-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="login-password">Contraseña</label>
+              <input 
+                type="password" 
+                id="login-password" 
+                name="password" 
+                placeholder="••••••••" 
+                required
+                autocomplete="current-password"
+              />
+              <span class="error" id="login-password-error"></span>
+            </div>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="btn-text">Iniciar Sesión</span>
+                <span class="btn-loader" style="display: none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+            </div>
+          </form>
+
+          <div class="auth-divider">o</div>
+
+          <div class="social-login">
+            <div id="google-login-button"></div>
+          </div>
+
+          <div style="margin-top: 2rem; text-align: center; color: var(--text-secondary);">
+            <p style="margin: 0;">¿No tienes cuenta? 
+              <a href="#" class="auth-link" onclick="switchAuthView('signup'); return false;">Regístrate aquí</a>
+            </p>
+            <p style="margin: 0.5rem 0 0 0;">
+              <a href="#" class="auth-link" onclick="switchAuthView('forgot'); return false;">¿Olvidaste tu contraseña?</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Signup View -->
+    <section id="auth-signup-view" class="view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Crear Cuenta</h1>
+            <p>Únete a NextNodes</p>
+          </div>
+
+          <div id="auth-signup-message" class="auth-message" style="display: none;"></div>
+
+          <form id="auth-signup-form" class="auth-form" onsubmit="event.preventDefault(); return false;">
+            <div class="form-group">
+              <label for="signup-name">Nombre Visible</label>
+              <input 
+                type="text" 
+                id="signup-name" 
+                name="name" 
+                placeholder="Tu nombre" 
+                required
+              />
+              <span class="error" id="signup-name-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="signup-email">Email</label>
+              <input 
+                type="email" 
+                id="signup-email" 
+                name="email" 
+                placeholder="tu@email.com" 
+                required
+              />
+              <span class="error" id="signup-email-error"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="signup-password">Contraseña</label>
+              <input 
+                type="password" 
+                id="signup-password" 
+                name="password" 
+                placeholder="••••••••" 
+                required
+                autocomplete="new-password"
+                oninput="updatePasswordStrength(this.value)"
+              />
+              <span class="error" id="signup-password-error"></span>
+            </div>
+
+            <div id="password-strength" class="password-strength" style="display: none;">
+              <div class="strength-bar">
+                <div class="strength-fill" id="strength-fill"></div>
+              </div>
+              <div class="strength-text">
+                <span class="strength-label" id="strength-label">Débil</span>
+                <span id="strength-percentage">0%</span>
+              </div>
+              <div class="strength-feedback" id="strength-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="signup-password-confirm">Confirmar Contraseña</label>
+              <input 
+                type="password" 
+                id="signup-password-confirm" 
+                name="passwordConfirm" 
+                placeholder="••••••••" 
+                required
+                autocomplete="new-password"
+              />
+              <span class="error" id="signup-password-confirm-error"></span>
+            </div>
+
+            <div class="form-checkbox">
+              <input 
+                type="checkbox" 
+                id="signup-terms" 
+                name="termsAccepted" 
+                required
+              />
+              <label for="signup-terms">
+                Acepto los <a href="#" onclick="openModal('termsModal'); return false;">Términos y Condiciones</a> 
+                y la <a href="#" onclick="openModal('privacyModal'); return false;">Política de Privacidad</a>
+              </label>
+            </div>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="btn-text">Crear Cuenta</span>
+                <span class="btn-loader" style="display: none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+            </div>
+          </form>
+
+          <div class="auth-divider">o</div>
+
+          <div class="social-login">
+            <div id="google-signup-button"></div>
+          </div>
+
+          <div style="margin-top: 2rem; text-align: center;">
+            <p style="margin: 0; color: var(--text-secondary);">¿Ya tienes cuenta? 
+              <a href="#" class="auth-link" onclick="switchAuthView('login'); return false;">Inicia sesión</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Email Verification View -->
+    <section id="auth-verify-view" class="view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Verifica tu Email</h1>
+            <p id="verify-email-text">Hemos enviado un código a tu email</p>
+          </div>
+
+          <div id="auth-verify-message" class="auth-message" style="display: none;"></div>
+
+          <form id="auth-verify-form" class="auth-form" onsubmit="event.preventDefault(); return false;">
+            <div class="form-group">
+              <label>Código de Verificación (6 dígitos)</label>
+              <div class="code-input-group" id="code-input-group">
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+                <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              </div>
+              <span class="error" id="verify-code-error"></span>
+              <input type="hidden" id="verify-code-input" name="code" />
+            </div>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="btn-text">Verificar Email</span>
+                <span class="btn-loader" style="display: none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+              <button type="button" class="btn btn-outline" onclick="handleResendCode()">
+                Reenviar Código
+              </button>
+            </div>
+          </form>
+
+          <div id="resend-cooldown" style="margin-top: 1rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; display: none;">
+            Puedes reenviar el código en <span id="resend-timer">0</span>s
+          </div>
+
+          <div style="margin-top: 2rem; text-align: center;">
+            <p style="margin: 0; color: var(--text-secondary);">
+              <a href="#" class="auth-link" onclick="switchAuthView('login'); return false;">Volver a Iniciar Sesión</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Forgot Password View -->
+    <section id="auth-forgot-view" class="view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Recuperar Contraseña</h1>
+            <p>Te enviaremos instrucciones para resetear tu contraseña</p>
+          </div>
+
+          <div id="auth-forgot-message" class="auth-message" style="display: none;"></div>
+
+          <form id="auth-forgot-form" class="auth-form" onsubmit="event.preventDefault(); return false;">
+            <div class="form-group">
+              <label for="forgot-email">Email</label>
+              <input 
+                type="email" 
+                id="forgot-email" 
+                name="email" 
+                placeholder="tu@email.com" 
+                required
+              />
+              <span class="error" id="forgot-email-error"></span>
+            </div>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="btn-text">Enviar Instrucciones</span>
+                <span class="btn-loader" style="display: none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+            </div>
+          </form>
+
+          <div style="margin-top: 2rem; text-align: center;">
+            <p style="margin: 0; color: var(--text-secondary);">¿Recuerdas tu contraseña? 
+              <a href="#" class="auth-link" onclick="switchAuthView('login'); return false;">Inicia sesión</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Reset Password View -->
+    <section id="auth-reset-view" class="view">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1>Resetear Contraseña</h1>
+            <p>Crea una nueva contraseña</p>
+          </div>
+
+          <div id="auth-reset-message" class="auth-message" style="display: none;"></div>
+
+          <form id="auth-reset-form" class="auth-form" onsubmit="event.preventDefault(); return false;">
+            <div class="form-group">
+              <label for="reset-password">Nueva Contraseña</label>
+              <input 
+                type="password" 
+                id="reset-password" 
+                name="password" 
+                placeholder="••••••••" 
+                required
+                autocomplete="new-password"
+                oninput="updatePasswordStrength(this.value)"
+              />
+              <span class="error" id="reset-password-error"></span>
+            </div>
+
+            <div id="reset-password-strength" class="password-strength" style="display: none;">
+              <div class="strength-bar">
+                <div class="strength-fill" id="reset-strength-fill"></div>
+              </div>
+              <div class="strength-text">
+                <span class="strength-label" id="reset-strength-label">Débil</span>
+                <span id="reset-strength-percentage">0%</span>
+              </div>
+              <div class="strength-feedback" id="reset-strength-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="reset-password-confirm">Confirmar Contraseña</label>
+              <input 
+                type="password" 
+                id="reset-password-confirm" 
+                name="passwordConfirm" 
+                placeholder="••••••••" 
+                required
+                autocomplete="new-password"
+              />
+              <span class="error" id="reset-password-confirm-error"></span>
+            </div>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="btn-text">Resetear Contraseña</span>
+                <span class="btn-loader" style="display: none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- #auth-container -->
+</div> <!-- .auth-wrapper -->
+
+  <!-- Modals (Privacy & Terms) -->
+  <div id="privacyModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Política de Privacidad de NextNodes</h2>
+        <button class="modal-close" onclick="closeModal('privacyModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. Introducción</h3>
+        <p>Esta Política de Privacidad explica qué datos recopila NextNodes Panel (en adelante, “el Panel”), cómo los utiliza, cómo los protege y los derechos que tienes sobre ellos. Al usar el Panel, aceptas las prácticas descritas en esta política.</p>
+
+        <h3>2. Datos que recopilamos</h3>
+        <h4>2.1 Datos de cuenta</h4>
+        <ul>
+          <li><strong>Nombre visible:</strong> El nombre que eliges al registrarte, usado para identificarte en el Panel.</li>
+          <li><strong>Correo electrónico:</strong> Usado para autenticación, recuperación de contraseña y comunicaciones del sistema.</li>
+          <li><strong>Contraseña:</strong> Almacenada de forma segura usando hashing (argon2). Nunca la almacenamos en texto plano.</li>
+        </ul>
+        <h4>2.2 Datos del servidor Minecraft</h4>
+        <ul>
+          <li><strong>UUID de jugadores:</strong> Identificadores únicos de los jugadores gestionados a través del Panel.</li>
+          <li><strong>Nombres de usuario:</strong> Nombres de los jugadores de Minecraft vinculados al servidor.</li>
+          <li><strong>Permisos y grupos:</strong> Configuraciones de permisos y grupos asignados a jugadores.</li>
+          <li><strong>Registros de auditoría:</strong> Historial de acciones realizadas desde el Panel (quién hizo qué y cuándo).</li>
+        </ul>
+        <h4>2.3 Datos técnicos</h4>
+        <ul>
+          <li>Dirección IP del servidor Minecraft vinculado.</li>
+          <li>Tokens de sesión temporales para autenticación.</li>
+        </ul>
+
+        <h3>3. Cómo usamos los datos</h3>
+        <ul>
+          <li>Proporcionar y mantener el funcionamiento del Panel de administración.</li>
+          <li>Autenticar tu identidad de forma segura en cada sesión.</li>
+          <li>Gestionar los permisos del servidor Minecraft de forma remota.</li>
+          <li>Mantener registros de auditoría para uso administrativo del servidor.</li>
+          <li>Enviarte notificaciones del sistema cuando sea necesario.</li>
+        </ul>
+
+        <h3>4. Almacenamiento y seguridad</h3>
+        <p>Los datos se almacenan localmente en la base de datos H2 del servidor Minecraft y en la base de datos SQLite del backend del Panel. Implementamos las siguientes medidas de seguridad:</p>
+        <ul>
+          <li>Contraseñas cifradas con <strong>argon2</strong>, el estándar más robusto disponible.</li>
+          <li>Sesiones protegidas con tokens <strong>JWT</strong> con caducidad.</li>
+          <li>Comunicación cifrada recomendada mediante HTTPS entre el Panel y el servidor.</li>
+        </ul>
+
+        <h3>5. Compartir datos</h3>
+        <p>NextNodes <strong>no vende, no alquila ni comparte</strong> tus datos personales con terceros. Los datos solo se utilizan dentro del sistema del Panel para las finalidades descritas en este documento.</p>
+
+        <h3>6. Retención de datos</h3>
+        <p>Los datos se conservan mientras tengas una cuenta activa en el Panel. Los registros de auditoría se retienen según la configuración del administrador del servidor. Puedes solicitar la eliminación de tus datos contactando al administrador de tu servidor.</p>
+
+        <h3>7. Tus derechos</h3>
+        <ul>
+          <li><strong>Acceso:</strong> Puedes solicitar ver los datos que tenemos sobre ti.</li>
+          <li><strong>Rectificación:</strong> Puedes corregir datos incorrectos desde la configuración de cuenta.</li>
+          <li><strong>Eliminación:</strong> Puedes solicitar la eliminación de tu cuenta y datos asociados.</li>
+          <li><strong>Portabilidad:</strong> Puedes solicitar una copia de tus datos en formato legible.</li>
+        </ul>
+
+        <h3>8. Cambios en esta política</h3>
+        <p>Podemos actualizar esta Política de Privacidad ocasionalmente. Te notificaremos de cambios significativos a través del Panel. El uso continuado del Panel tras los cambios implica la aceptación de la política actualizada.</p>
+
+        <h3>9. Contacto</h3>
+        <p>Si tienes preguntas sobre esta Política de Privacidad, contacta al administrador de tu servidor NextNodes.</p>
+        <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.85rem;"><em>Última actualización: Marzo 2026</em></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="termsModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Términos y Condiciones de NextNodes</h2>
+        <button class="modal-close" onclick="closeModal('termsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. Aceptación de los Términos</h3>
+        <p>Al acceder o utilizar el Panel de administración NextNodes (en adelante, “el Panel”), aceptas quedar vinculado por estos Términos y Condiciones. Si no estás de acuerdo con alguno de estos términos, no debes usar el Panel.</p>
+
+        <h3>2. Descripción del Servicio</h3>
+        <p>NextNodes Panel es una herramienta de administración para servidores Minecraft que permite:</p>
+        <ul>
+          <li>Gestionar permisos y grupos de jugadores de forma remota.</li>
+          <li>Configurar prefijos, sufijos y metadatos de jugadores.</li>
+          <li>Consultar registros de auditoría de cambios en el servidor.</li>
+          <li>Administrar grupos de permisos del servidor.</li>
+        </ul>
+
+        <h3>3. Uso Permitido</h3>
+        <p>Al usar el Panel te comprometes a:</p>
+        <ul>
+          <li>Usar el Panel únicamente para administrar servidores Minecraft que tú o tu organización operen legalmente.</li>
+          <li>No intentar acceder a servidores para los que no tienes autorización.</li>
+          <li>No usar el Panel para actividades ilegales o que violen los Términos de Servicio de Minecraft/Mojang.</li>
+          <li>Mantener la confidencialidad de tus credenciales de acceso.</li>
+          <li>Notificar inmediatamente al administrador si sospechas de acceso no autorizado.</li>
+        </ul>
+
+        <h3>4. Responsabilidades del Usuario</h3>
+        <p>Eres responsable de:</p>
+        <ul>
+          <li>Todas las acciones realizadas desde tu cuenta en el Panel.</li>
+          <li>Mantener actualizado el mod NextNodes en tu servidor Minecraft.</li>
+          <li>La seguridad de la clave de vinculación entre el Panel y tu servidor.</li>
+          <li>Las consecuencias de cambios de permisos realizados a través del Panel.</li>
+        </ul>
+
+        <h3>5. Limitación de Responsabilidad</h3>
+        <p>NextNodes Panel se proporciona <strong>“tal como está”</strong> sin garantías de ningún tipo. No somos responsables de:</p>
+        <ul>
+          <li>Pérdida de datos del servidor por mal uso del Panel.</li>
+          <li>Daños causados por configuraciones de permisos incorrectas.</li>
+          <li>Interrupciones del servicio por causas técnicas.</li>
+          <li>Accesos no autorizados producidos por credenciales comprometidas del usuario.</li>
+        </ul>
+
+        <h3>6. Propiedad Intelectual</h3>
+        <p>El código fuente de NextNodes se distribuye bajo la licencia open-source incluida en el repositorio. No puedes redistribuir versiones modificadas del Panel sin cumplir los términos de dicha licencia.</p>
+
+        <h3>7. Privacidad</h3>
+        <p>El tratamiento de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integrante de estos Términos y Condiciones.</p>
+
+        <h3>8. Modificaciones</h3>
+        <p>Nos reservamos el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor al ser publicados en el Panel. El uso continuado del Panel después de la publicación de cambios constituye tu aceptación de los nuevos términos.</p>
+
+        <h3>9. Terminación</h3>
+        <p>El administrador del servidor puede cancelar tu acceso al Panel en cualquier momento si incumples estos Términos. Tras la cancelación, dejarás de tener acceso a las funciones del Panel.</p>
+
+        <h3>10. Legislación Aplicable</h3>
+        <p>Estos Términos se rigen por la legislación aplicable en el país de residencia del operador del servidor. Cualquier disputa será resuelta mediante los procedimientos legales correspondientes.</p>
+        <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.85rem;"><em>Última actualización: Marzo 2026</em></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth-validation.js"></script>
+  <script src="auth-service.js"></script>
+  <script src="config.js"></script>
+  <script src="helpers.js"></script>
+  <script src="form-handlers.js"></script>
+  <script src="event-listeners.js"></script>
+  <script src="auth-ui-helpers.js"></script>
+  <script>
+    // Initialize Auth View
+    document.addEventListener('DOMContentLoaded', () => {
+        // Auto-detect view from URL if needed or default to login
+        const urlParams = new URLSearchParams(window.location.search);
+        const view = urlParams.get('view') || 'login';
+        switchAuthView(view);
+    });
+  </script>
+</body>
+</html>

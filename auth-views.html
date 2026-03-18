@@ -1,0 +1,333 @@
+<!-- NextNodes Authentication Views -->
+<!-- Incluir después del link-view actual o reemplazarlo -->
+
+<!-- Auth Container -->
+<div id="auth-container" style="display: none;">
+  
+  <!-- 1. Login View -->
+  <section id="auth-login-view" class="view hidden">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Iniciar Sesión</h1>
+          <p>Accede a tu panel de NextNodes</p>
+        </div>
+
+        <div id="auth-login-message" class="auth-message" style="display: none;"></div>
+
+        <form id="auth-login-form" class="auth-form" onsubmit="handleLoginSubmit(event)">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input 
+              type="email" 
+              id="login-email" 
+              name="email" 
+              placeholder="tu@email.com" 
+              required
+            />
+            <span class="error" id="login-email-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <input 
+              type="password" 
+              id="login-password" 
+              name="password" 
+              placeholder="••••••••" 
+              required
+            />
+            <span class="error" id="login-password-error"></span>
+          </div>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Iniciar Sesión</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner"></span>
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <div class="auth-divider">o</div>
+
+        <div class="social-login">
+          <button type="button" id="google-signin-btn" class="google-signin-btn">
+            🔑 Continuar con Google
+          </button>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center; color: var(--text-secondary);">
+          <p style="margin: 0;">¿No tienes cuenta? 
+            <a href="#" class="auth-link" onclick="switchAuthView('signup')">Regístrate aquí</a>
+          </p>
+          <p style="margin: 0.5rem 0 0 0;">
+            <a href="#" class="auth-link" onclick="switchAuthView('forgot-password')">¿Olvidaste tu contraseña?</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Signup View -->
+  <section id="auth-signup-view" class="view hidden">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Crear Cuenta</h1>
+          <p>Únete a NextNodes</p>
+        </div>
+
+        <div id="auth-signup-message" class="auth-message" style="display: none;"></div>
+
+        <form id="auth-signup-form" class="auth-form" onsubmit="handleSignupSubmit(event)">
+          <div class="form-group">
+            <label for="signup-name">Nombre Visible</label>
+            <input 
+              type="text" 
+              id="signup-name" 
+              name="name" 
+              placeholder="Tu nombre" 
+              required
+            />
+            <span class="error" id="signup-name-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input 
+              type="email" 
+              id="signup-email" 
+              name="email" 
+              placeholder="tu@email.com" 
+              required
+            />
+            <span class="error" id="signup-email-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-password">Contraseña</label>
+            <input 
+              type="password" 
+              id="signup-password" 
+              name="password" 
+              placeholder="••••••••" 
+              required
+              oninput="updatePasswordStrength(this.value)"
+            />
+            <span class="error" id="signup-password-error"></span>
+          </div>
+
+          <div id="password-strength" class="password-strength" style="display: none;">
+            <div class="strength-bar">
+              <div class="strength-fill" id="strength-fill"></div>
+            </div>
+            <div class="strength-text">
+              <span class="strength-label" id="strength-label">Débil</span>
+              <span id="strength-percentage">0%</span>
+            </div>
+            <div class="strength-feedback" id="strength-feedback"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-password-confirm">Confirmar Contraseña</label>
+            <input 
+              type="password" 
+              id="signup-password-confirm" 
+              name="passwordConfirm" 
+              placeholder="••••••••" 
+              required
+            />
+            <span class="error" id="signup-password-confirm-error"></span>
+          </div>
+
+          <div class="form-checkbox">
+            <input 
+              type="checkbox" 
+              id="signup-terms" 
+              name="termsAccepted" 
+              required
+            />
+            <label for="signup-terms">
+              Acepto los <a href="#" onclick="openModal('privacyModal'); return false;">Términos y Condiciones</a> 
+              y la <a href="#" onclick="openModal('termsModal'); return false;">Política de Privacidad</a>
+            </label>
+          </div>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Crear Cuenta</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner"></span>
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <div style="margin-top: 2rem; text-align: center;">
+          <p style="margin: 0; color: var(--text-secondary);">¿Ya tienes cuenta? 
+            <a href="#" class="auth-link" onclick="switchAuthView('login')">Inicia sesión</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Email Verification View -->
+  <section id="auth-verify-view" class="view hidden">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Verifica tu Email</h1>
+          <p id="verify-email-text">Hemos enviado un código a tu email</p>
+        </div>
+
+        <div id="auth-verify-message" class="auth-message" style="display: none;"></div>
+
+        <form id="auth-verify-form" class="auth-form" onsubmit="handleVerifySubmit(event)">
+          <div class="form-group">
+            <label>Código de Verificación (6 dígitos)</label>
+            <div class="code-input-group" id="code-input-group">
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+              <input class="code-input" type="text" maxlength="1" inputmode="numeric" />
+            </div>
+            <span class="error" id="verify-code-error"></span>
+            <input type="hidden" id="verify-code-input" name="code" />
+          </div>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Verificar Email</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner"></span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-outline" onclick="handleResendCode()">
+              Reenviar Código
+            </button>
+          </div>
+        </form>
+
+        <div id="resend-cooldown" style="margin-top: 1rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; display: none;">
+          Puedes reenviar el código en <span id="resend-timer">0</span>s
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+          <p style="margin: 0; color: var(--text-secondary);">
+            <a href="#" class="auth-link" onclick="switchAuthView('login')">Volver a Iniciar Sesión</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Forgot Password View -->
+  <section id="auth-forgot-view" class="view hidden">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Recuperar Contraseña</h1>
+          <p>Te enviaremos instrucciones para resetear tu contraseña</p>
+        </div>
+
+        <div id="auth-forgot-message" class="auth-message" style="display: none;"></div>
+
+        <form id="auth-forgot-form" class="auth-form" onsubmit="handleForgotSubmit(event)">
+          <div class="form-group">
+            <label for="forgot-email">Email</label>
+            <input 
+              type="email" 
+              id="forgot-email" 
+              name="email" 
+              placeholder="tu@email.com" 
+              required
+            />
+            <span class="error" id="forgot-email-error"></span>
+          </div>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Enviar Instrucciones</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner"></span>
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <div style="margin-top: 2rem; text-align: center;">
+          <p style="margin: 0; color: var(--text-secondary);">¿Recuerdas tu contraseña? 
+            <a href="#" class="auth-link" onclick="switchAuthView('login')">Inicia sesión</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Reset Password View -->
+  <section id="auth-reset-view" class="view hidden">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1>Resetear Contraseña</h1>
+          <p>Crea una nueva contraseña</p>
+        </div>
+
+        <div id="auth-reset-message" class="auth-message" style="display: none;"></div>
+
+        <form id="auth-reset-form" class="auth-form" onsubmit="handleResetSubmit(event)">
+          <div class="form-group">
+            <label for="reset-password">Nueva Contraseña</label>
+            <input 
+              type="password" 
+              id="reset-password" 
+              name="password" 
+              placeholder="••••••••" 
+              required
+              oninput="updatePasswordStrength(this.value)"
+            />
+            <span class="error" id="reset-password-error"></span>
+          </div>
+
+          <div id="reset-password-strength" class="password-strength" style="display: none;">
+            <div class="strength-bar">
+              <div class="strength-fill" id="reset-strength-fill"></div>
+            </div>
+            <div class="strength-text">
+              <span class="strength-label" id="reset-strength-label">Débil</span>
+              <span id="reset-strength-percentage">0%</span>
+            </div>
+            <div class="strength-feedback" id="reset-strength-feedback"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="reset-password-confirm">Confirmar Contraseña</label>
+            <input 
+              type="password" 
+              id="reset-password-confirm" 
+              name="passwordConfirm" 
+              placeholder="••••••••" 
+              required
+            />
+            <span class="error" id="reset-password-confirm-error"></span>
+          </div>
+
+          <div class="auth-actions">
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Resetear Contraseña</span>
+              <span class="btn-loader" style="display: none;">
+                <span class="spinner"></span>
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</div>

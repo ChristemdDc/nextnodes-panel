@@ -6,75 +6,42 @@ document.addEventListener('DOMContentLoaded', () => {
         linked: false,
         token: null,
         groups: [],
-        currentProfileUuid: null, // Track current profile
-        sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
+        currentProfileUuid: null // Track current profile
     };
 
     // DOM Elements
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const mainContent = document.querySelector('main');
     const views = document.querySelectorAll('.view');
     const navLinks = document.querySelectorAll('.nav-link');
     const linkBtn = document.getElementById('linkServerBtn');
-    const loginBtn = document.getElementById('loginBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
     const serverStatus = document.getElementById('serverStatus');
     const apiUrlInput = document.getElementById('apiUrl');
-    
-    // Sidebar toggle functionality
-    function toggleSidebar() {
-        state.sidebarCollapsed = !state.sidebarCollapsed;
-        localStorage.setItem('sidebarCollapsed', state.sidebarCollapsed);
-        
-        if (state.sidebarCollapsed) {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.add('collapsed');
-        } else {
-            sidebar.classList.remove('collapsed');
-            mainContent.classList.remove('collapsed');
-        }
-    }
-    
-    // Initialize sidebar state
-    if (state.sidebarCollapsed) {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('collapsed');
-    }
-    
-    // Event listener for toggle button
-    sidebarToggle.addEventListener('click', toggleSidebar);
     
     // Init Settings
     apiUrlInput.value = state.apiUrl;
 
     // Navigation
     function navigate(targetId) {
-        // Hide ALL views first
         views.forEach(view => {
             view.classList.add('hidden');
             view.classList.remove('active');
         });
-
-        // Show the specific normal view
+        
         const targetView = document.getElementById(`${targetId}-view`);
         if (targetView) {
             targetView.classList.remove('hidden');
             targetView.classList.add('active');
         }
-
+        
         navLinks.forEach(link => {
             link.classList.toggle('active', link.dataset.target === targetId);
         });
 
-        // Fetch audit logs immediately when entering audit view
+        // Fetch audit logs immediately when entering the audit view
         if (targetId === 'audit') {
-            fetchAuditLogs(true);
+            fetchAuditLogs();
         }
     }
-    
-    // Expose navigate globally
-    window.navigate = navigate;
     
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -84,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'settings' || state.linked) {
                 if (target) navigate(target);
             } else {
-                showInfoModal('Vinculación Requerida', '⚠️', 'Por favor, vincula un servidor de Minecraft primero para acceder a esta sección.');
+                alert("Please link a server first.");
             }
         });
     });
@@ -92,117 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     linkBtn.addEventListener('click', () => {
         navigate('link');
     });
-
-    loginBtn.addEventListener('click', () => {
-        if (typeof authService !== 'undefined' && authService && authService.isAuthenticated()) {
-            openLogoutModal();
-        } else {
-            window.location.href = 'auth.html';
-        }
-    });
-
-    function checkAuth() {
-        if (typeof authService !== 'undefined') {
-            console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
-        }
-    }
-
-    setTimeout(checkAuth, 500);
-
-    /**
-     * Lógica del Modal de Logout Personalizado
-     */
-    const logoutModal = document.getElementById('confirmLogoutModal');
-    const confirmLogoutBtn = document.getElementById('confirmLogoutSubmitBtn');
-    const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
-
-    function openLogoutModal() {
-        if (logoutModal) {
-            logoutModal.classList.remove('hidden');
-        }
-    }
-
-    function closeLogoutModal() {
-        if (logoutModal) {
-            logoutModal.classList.add('hidden');
-        }
-    }
-
-    if (confirmLogoutBtn) {
-        confirmLogoutBtn.addEventListener('click', () => {
-            if (typeof authService !== 'undefined' && authService) {
-                authService.logout();
-                closeLogoutModal();
-                navigate('dashboard');
-                window.location.reload();
-            }
-        });
-    }
-
-    const logoutBtnTop = document.getElementById('logoutBtnTop');
-
-    // The original `logoutBtn` variable is not defined in this scope.
-    // Assuming `confirmLogoutBtn` is the primary logout trigger from the modal.
-    // The instruction implies `logoutBtn` might be another element, but it's not in the provided code.
-    // For now, only `logoutBtnTop` is handled as per the instruction.
-    if (logoutBtnTop) logoutBtnTop.addEventListener('click', () => {
-        if (typeof authService !== 'undefined' && authService) authService.logout();
-    });
-
-    if (cancelLogoutBtn) {
-        cancelLogoutBtn.addEventListener('click', closeLogoutModal);
-    }
-
-    // Cerrar al hacer clic fuera del contenido
-    window.addEventListener('click', (e) => {
-        if (e.target === logoutModal) {
-            closeLogoutModal();
-        }
-    });
-    /**
-     * Actualiza la interfaz de usuario con los datos del usuario
-     */
-    function updateUserUI() {
-        const userBadge = document.getElementById('userDisplayName');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtnTop = document.getElementById('logoutBtnTop');
-        
-        if (!userBadge || !loginBtn) return;
-
-        const statusText = userBadge.querySelector('.status-text');
-
-        if (typeof authService !== 'undefined' && authService && authService.isAuthenticated()) {
-            const user = authService.getCurrentUser();
-            console.log('[DEBUG] User is authenticated:', user);
-            
-            // Show username in red box area (navbar center)
-            if (statusText) {
-                // Try different properties based on common auth response patterns
-                statusText.textContent = user.name || user.displayName || user.username || user.email || 'Usuario';
-            }
-            userBadge.classList.remove('hidden');
-            
-            // Handle Green Box area (Logout after login)
-            if (loginBtn) loginBtn.classList.add('hidden');
-            if (logoutBtnTop) logoutBtnTop.classList.remove('hidden');
-        } else {
-            console.log('[DEBUG] User is not authenticated');
-            if (statusText) statusText.textContent = 'Bienvenido';
-            userBadge.classList.add('hidden');
-            
-            if (loginBtn) loginBtn.classList.remove('hidden');
-            if (logoutBtnTop) logoutBtnTop.classList.add('hidden');
-        }
-    }
-
-    // Hacer disponible globalmente para AuthService
-    window.updateUserUI = updateUserUI;
-
-    // Inicializar UI de usuario inmediatamente
-    updateUserUI();
-    
-    // Y de nuevo cuando el DOM esté completamente cargado para asegurar que AuthService existe
-    document.addEventListener('DOMContentLoaded', updateUserUI);
 
     disconnectBtn.addEventListener('click', () => {
         if(confirm("Are you sure you want to disconnect?")) {
@@ -218,38 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = apiUrlInput.value.replace(/\/$/, '');
         state.apiUrl = url;
         localStorage.setItem('apiUrl', url);
-        showInfoModal('Ajustes Guardados', '⚙️', 'La configuración del API se ha actualizado correctamente.');
+        alert('Settings saved');
         checkServerStatus();
-    });
-
-    /**
-     * Lógica de Modal Informativo General
-     */
-    const infoModal = document.getElementById('generalInfoModal');
-    const infoTitle = document.getElementById('infoModalTitle');
-    const infoMsg = document.getElementById('infoModalMessage');
-    const infoIcon = document.getElementById('infoModalIcon');
-    const closeInfoBtn = document.getElementById('closeInfoModalBtn');
-
-    function showInfoModal(title, icon, message) {
-        if (!infoModal) return;
-        if (infoTitle) infoTitle.textContent = title;
-        if (infoIcon) infoIcon.textContent = icon;
-        if (infoMsg) infoMsg.textContent = message;
-        infoModal.classList.remove('hidden');
-    }
-
-    if (closeInfoBtn) {
-        closeInfoBtn.addEventListener('click', () => {
-            infoModal.classList.add('hidden');
-        });
-    }
-
-    // Cerrar al hacer clic fuera
-    window.addEventListener('click', (e) => {
-        if (e.target === infoModal) {
-            infoModal.classList.add('hidden');
-        }
     });
 
     // Link Logic
@@ -294,25 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     function updateStatus(online) {
-        const statusText = document.getElementById('serverStatusText');
         if (online) {
-            if (statusText) statusText.textContent = 'Connected';
-            serverStatus.classList.remove('offline');
-            serverStatus.classList.add('online');
+            serverStatus.textContent = 'Connected';
+            serverStatus.classList.remove('status-offline');
+            serverStatus.classList.add('status-online');
             linkBtn.classList.add('hidden');
             disconnectBtn.classList.remove('hidden');
             loadGroups(); // Cargar grupos al conectar
-            loadUsersList(); // Cargar usuarios al conectar
-            
-            // Actualizar uptime si está disponible en state o mock
-            const uptimeEl = document.getElementById('uptime');
-            if (uptimeEl && uptimeEl.textContent === '--') {
-                uptimeEl.textContent = 'Online';
-            }
         } else {
-            if (statusText) statusText.textContent = 'Disconnected';
-            serverStatus.classList.add('offline');
-            serverStatus.classList.remove('online');
+            serverStatus.textContent = 'Disconnected';
+            serverStatus.classList.add('status-offline');
+            serverStatus.classList.remove('status-online');
             linkBtn.classList.remove('hidden');
             disconnectBtn.classList.add('hidden');
             
@@ -324,8 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('uptime').textContent = '--';
             
             // Cerrar perfil si está abierto
+            userInfoContainer.style.display = 'none';
             userInfoContainer.classList.add('hidden');
-            usersListContainer.classList.remove('hidden');
+            usersListContainer.style.display = 'block';
             state.currentProfileUuid = null;
             
             // Volver a la pantalla de inicio/link para evitar ver datos estáticos
@@ -339,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 // Si el servidor vuelve, actualizamos el estado visual si estaba desconectado
                 // PERO solo si estamos lógicamente vinculados
-                if (state.linked && serverStatus.classList.contains('offline')) {
+                if (state.linked && serverStatus.classList.contains('status-offline')) {
                     updateStatus(true);
                     navigate('dashboard'); // Volver al dashboard automáticamente
                 }
@@ -348,20 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Solo mostramos desconexión si estábamos vinculados
                 if (state.linked) {
                     updateStatus(false);
-                } else {
-                    // Sin vincular: mantener rojo
-                    serverStatus.classList.add('offline');
-                    serverStatus.classList.remove('online');
                 }
                 return false;
             }
         } catch (e) {
             if (state.linked) {
                 updateStatus(false);
-            } else {
-                // Sin vincular: mantener rojo
-                serverStatus.classList.add('offline');
-                serverStatus.classList.remove('online');
             }
             return false;
         }
@@ -380,8 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (state.currentProfileUuid && !userInfoContainer.classList.contains('hidden')) {
                     refreshUserProfile(state.currentProfileUuid);
                 }
-
-                // Update audit if visible
+                
+                // Actualizar audit si está visible
                 if (!document.getElementById('audit-view').classList.contains('hidden')) {
                     fetchAuditLogs();
                 }
@@ -451,12 +262,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadGroups();
                 fetchAuditLogs();
             } else {
-                alert("Failed to delete group");
+                alert('Failed to delete group');
             }
         } catch (e) {
-            alert("Error: " + e.message);
+            console.error(e);
         }
     };
+
+    // Audit Logic
+    document.getElementById('refreshAuditBtn').addEventListener('click', fetchAuditLogs);
+
+    async function fetchAuditLogs() {
+        try {
+            const res = await fetch(`${state.apiUrl}/audit`);
+            if (res.ok) {
+                const logs = await res.json();
+                renderAuditLogs(logs);
+            }
+        } catch (e) {
+            console.error("Error loading audit logs", e);
+        }
+    }
+
+    function renderAuditLogs(logs) {
+        const tbody = document.getElementById('auditTableBody');
+        if (!tbody) return;
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No logs found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const date = new Date(log.timestamp).toLocaleString();
+            let actionColor = 'var(--text-primary)';
+            if (log.action.includes('ADD')) actionColor = 'var(--success)';
+            if (log.action.includes('REMOVE')) actionColor = 'var(--danger)';
+            if (log.action.includes('LINK')) actionColor = 'var(--primary)';
+
+            return `
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 0.85rem;">${date}</td>
+                <td style="color: var(--primary);">${log.actorName}</td>
+                <td style="color: ${actionColor}; font-weight: bold;">${log.action}</td>
+                <td><code style="background: var(--bg-dark); padding: 0.2rem 0.4rem; border-radius: 4px;">${log.targetId}</code></td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">${log.details}</td>
+            </tr>
+            `;
+        }).join('');
+    }
 
     window.editGroup = (name) => {
         alert("Edit group " + name);
@@ -485,191 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- AUDIT LOG ---
-    document.getElementById('refreshAuditBtn').addEventListener('click', () => fetchAuditLogs(true));
-
-    async function fetchAuditLogs(showSpinner = false) {
-        const tbody = document.getElementById('auditTableBody');
-        if (!tbody) return;
-        
-        // Solo mostrar spinner en carga manual (navegar a la vista o botón Refresh).
-        // En el polling automático NO se limpia la tabla para evitar parpadeo.
-        if (showSpinner) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);"><span style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:8px;"></span> Cargando...</td></tr>';
-        }
-        
-        let res;
-        try {
-            res = await fetch(`${state.apiUrl}/audit`);
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">❌ Sin conexión al servidor (${e.message}). Verifica que Minecraft esté corriendo.</td></tr>`;
-            console.error("[Audit] Network error:", e);
-            return;
-        }
-
-        let rawText;
-        try { rawText = await res.text(); } catch (e) { return; }
-
-        if (!res.ok) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ Error HTTP ${res.status}: ${rawText.substring(0, 200)}</td></tr>`;
-            console.error("[Audit] HTTP error:", res.status, rawText);
-            return;
-        }
-
-        let logs;
-        try {
-            logs = JSON.parse(rawText);
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ JSON inválido: ${rawText.substring(0, 300)}</td></tr>`;
-            console.error("[Audit] JSON error:", e, rawText);
-            return;
-        }
-
-        renderAuditLogs(logs);
-    }
-
-    function renderAuditLogs(logs) {
-        const tbody = document.getElementById('auditTableBody');
-        if (!tbody) return;
-        
-        if (!Array.isArray(logs) || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No hay logs de auditoría. Realiza alguna acción (crear grupo, editar usuario, etc.) para generar registros.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = logs.map(log => {
-            const date = new Date(log.timestamp).toLocaleString();
-            let actionColor = 'var(--text-primary)';
-            if (log.action.includes('ADD')) actionColor = 'var(--success)';
-            if (log.action.includes('REMOVE')) actionColor = 'var(--danger)';
-            if (log.action.includes('LINK')) actionColor = 'var(--primary)';
-
-            // Escapar HTML para prevenir XSS
-            const escapeHtml = (str) => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(log.targetId);
-            const targetDisplay = isUuid
-                ? `<span style="cursor:pointer; color:var(--text-primary);"
-                       onclick="navigator.clipboard.writeText('${escapeHtml(log.targetId)}')"
-                       title="UUID: ${escapeHtml(log.targetId)} — Click para copiar">${escapeHtml(log.targetName || log.targetId)}</span>`
-                : `<code style="background: var(--bg-dark); padding: 0.2rem 0.4rem; border-radius: 4px;">${escapeHtml(log.targetName || log.targetId)}</code>`;
-
-            return `
-            <tr>
-                <td style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(date)}</td>
-                <td style="color: var(--primary);">${escapeHtml(log.actorName)}</td>
-                <td style="color: ${actionColor}; font-weight: bold;">${escapeHtml(log.action)}</td>
-                <td>${targetDisplay}</td>
-                <td style="color: var(--text-secondary); font-size: 0.9rem;">${escapeHtml(log.details)}</td>
-            </tr>
-            `;
-        }).join('');
-    }
-
-    // --- Debug / Simulation ---
-
-    const debugCheckBtn = document.getElementById('debugCheckBtn');
-    const debugUserInput = document.getElementById('debugUserInput');
-    const debugPermInput = document.getElementById('debugPermInput');
-    const debugResultContainer = document.getElementById('debugResultContainer');
-
-    if (debugCheckBtn) {
-        debugCheckBtn.addEventListener('click', async () => {
-            const user = (debugUserInput.value || '').trim();
-            const perm = (debugPermInput.value || '').trim();
-            if (!user || !perm) return;
-            debugCheckBtn.disabled = true;
-            debugCheckBtn.textContent = 'Checking…';
-            try {
-                const res = await fetch(`${state.apiUrl}/debug?user=${encodeURIComponent(user)}&permission=${encodeURIComponent(perm)}`);
-                const data = await res.json();
-                if (!res.ok) {
-                    renderDebugError(data.error || `HTTP ${res.status}`);
-                } else {
-                    renderDebugResult(data);
-                }
-            } catch (err) {
-                renderDebugError('Failed to reach server: ' + err.message);
-            } finally {
-                debugCheckBtn.disabled = false;
-                debugCheckBtn.textContent = 'Check';
-            }
-        });
-
-        // Allow pressing Enter in the permission input to trigger check
-        debugPermInput && debugPermInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') debugCheckBtn.click();
-        });
-    }
-
-    function renderDebugError(msg) {
-        const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        debugResultContainer.innerHTML = `<div class="card" style="border:1px solid var(--danger); padding:1rem; color:var(--danger);">${escapeHtml(msg)}</div>`;
-    }
-
-    function renderDebugResult(data) {
-        const escapeHtml = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-        const resultColor = data.result === 'ALLOW' ? 'var(--success)'
-                          : data.result === 'DENY'  ? 'var(--danger)'
-                          : 'var(--text-secondary)';
-
-        const actionBadge = (action) => {
-            const colors = {
-                MATCHED:         'var(--success)',
-                DENY_MATCHED:    'var(--danger)',
-                SKIPPED_EXPIRED: '#f59e0b',
-                SKIPPED_CONTEXT: '#6366f1',
-                UNDEFINED:       'var(--text-secondary)',
-            };
-            const c = colors[action] || 'var(--text-secondary)';
-            return `<span style="font-size:0.75rem; font-weight:600; color:${c}; background:${c}22; padding:0.15rem 0.5rem; border-radius:4px;">${escapeHtml(action)}</span>`;
-        };
-
-        const stepsHtml = (data.steps || []).map(s => `
-            <tr>
-                <td style="color:var(--primary);">${escapeHtml(s.source)}</td>
-                <td>${actionBadge(s.action)}</td>
-                <td style="font-family:monospace;">${s.nodeKey ? escapeHtml(s.nodeKey) : '<span style="color:var(--text-secondary);">—</span>'}</td>
-                <td>${s.nodeKey ? `<span style="color:${s.nodeValue ? 'var(--success)' : 'var(--danger)'};">${s.nodeValue ? 'true' : 'false'}</span>` : ''}</td>
-                <td style="color:var(--text-secondary); font-size:0.85rem;">${escapeHtml(s.detail)}</td>
-            </tr>`).join('');
-
-        debugResultContainer.innerHTML = `
-            <div class="card" style="margin-bottom:1rem; padding:1.25rem;">
-                <div style="display:flex; gap:2rem; align-items:center; flex-wrap:wrap;">
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Player</div>
-                        <div style="font-weight:600; color:var(--text-primary);">${escapeHtml(data.user)}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Permission</div>
-                        <div style="font-family:monospace; color:var(--text-primary);">${escapeHtml(data.permission)}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Result</div>
-                        <div style="font-size:1.2rem; font-weight:700; color:${resultColor};">${escapeHtml(data.result)}</div>
-                    </div>
-                    ${data.origin ? `<div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Origin</div>
-                        <div style="color:var(--text-primary);">${escapeHtml(data.origin)}</div>
-                    </div>` : ''}
-                </div>
-            </div>
-            ${stepsHtml ? `
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Source</th><th>Action</th><th>Node</th><th>Value</th><th>Detail</th></tr>
-                    </thead>
-                    <tbody>${stepsHtml}</tbody>
-                </table>
-            </div>` : ''}
-        `;
-    }
-
     // --- DEBUG MODE ---
-    const debugMode = true;
+    const debugMode = true; // Activar logs detallados
 
     function log(msg, ...args) {
         if (debugMode) console.log(`[NextNodes] ${msg}`, ...args);
@@ -709,7 +380,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openProfileView() {
-        usersListContainer.classList.add('hidden');
+        usersListContainer.style.display = 'none';
+        userInfoContainer.style.display = 'block'; 
         userInfoContainer.classList.remove('hidden');
         log("View switched to Profile");
     }
@@ -808,8 +480,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Botón de cerrar perfil con listener explícito
     document.getElementById('closeProfileBtn').addEventListener('click', () => {
+        userInfoContainer.style.display = 'none';
         userInfoContainer.classList.add('hidden');
+        
+        usersListContainer.style.display = 'block';
         usersListContainer.classList.remove('hidden');
+        
+        // Limpiar búsqueda
         userSearchInput.value = '';
     });
     
@@ -862,13 +539,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const metaList = document.getElementById('userMetaList');
         if (user.meta && user.meta.length > 0) {
             metaList.innerHTML = user.meta.map(m => `
-                <li style="padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
+                <li style="padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; overflow: hidden;">
+                    <div style="flex: 1; min-width: 0; margin-right: 0.5rem;">
                         <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: bold; margin-right: 0.5rem;">${m.type}</span>
-                        <span style="font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 2px;">${formatMinecraftText(m.value)}</span>
+                        <span style="font-family: 'Minecraft', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 2px;">${formatMinecraftText(m.value)}</span>
                         <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">(P: ${m.priority})</span>
                     </div>
-                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${encodeURIComponent(m.value)}')">X</button>
+                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem; flex-shrink: 0;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${encodeURIComponent(m.value)}')">X</button>
                 </li>
             `).join('');
         } else {
@@ -911,17 +588,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Multi-Stop Gradient Logic
+    // Gradient Logic
     const gradStopsContainer = document.getElementById('gradStopsContainer');
     const addGradStopBtn = document.getElementById('addGradStopBtn');
     const gradBoldBtn = document.getElementById('gradBoldBtn');
     let isGradBold = false;
 
+    // Toggle Bold
     gradBoldBtn.addEventListener('click', () => {
         isGradBold = !isGradBold;
         gradBoldBtn.classList.toggle('active', isGradBold);
     });
 
+    // Helper to create a color stop
     function createColorStop(hex) {
         const div = document.createElement('div');
         div.className = 'grad-stop';
@@ -931,12 +610,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="grad-stop-remove">&times;</span>
         `;
         
+        // Update preview on change
         const input = div.querySelector('input');
         const preview = div.querySelector('.grad-stop-preview');
         input.addEventListener('input', () => {
             preview.style.backgroundColor = input.value;
         });
 
+        // Remove handler
         div.querySelector('.grad-stop-remove').addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -973,16 +654,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function generateMultiGradient(text, colors, bold) {
-        if (colors.length < 2) return text;
+        if (colors.length < 2) return text; // Fallback
         
         let result = "";
         const len = text.length;
         if (len <= 1) return `&#${colors[0].substring(1).toUpperCase()}${bold ? '&l' : ''}${text}`;
 
+        // Distribute colors evenly across text length
+        // Segments = colors.length - 1
         const segmentLength = (len - 1) / (colors.length - 1);
         
         for (let i = 0; i < len; i++) {
+            // Determine which segment this char belongs to
             const segmentIndex = Math.min(Math.floor(i / segmentLength), colors.length - 2);
+            
+            // Calculate progress within this segment (0.0 to 1.0)
             const segmentStart = segmentIndex * segmentLength;
             const ratio = (i - segmentStart) / segmentLength;
             
@@ -1009,6 +695,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return result;
     }
+
+    /* Deprecated simple generator
+    function generateGradient(text, startHex, endHex, bold) { ... } 
+    */
 
     function insertAtCursor(input, text) {
         const start = input.selectionStart;
@@ -1088,10 +778,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let isItalic = false;
         let isUnderline = false;
         
+        // Fix double ampersands first (sometimes servers double escape)
+        // If text has &&, it might be escaping. 
+        // But if we see &##, that's likely a typo from the gradient generator.
+        // The gradient generator output: &#RRGGBB. If it shows &##, that's wrong.
+        
+        // Let's assume standard format: &#RRGGBB or &c
+        
         let i = 0;
         while (i < text.length) {
             // Check for Hex color: &#RRGGBB
-            if (text[i] === '&' && text[i+1] === '#') {
+            // Also handle common variations if needed, but strict is safer.
+            if (text[i] === '&' && i + 1 < text.length && text[i+1] === '#') {
                 if (i + 7 < text.length) {
                     const hex = text.substring(i + 2, i + 8);
                     // Validate hex
@@ -1167,6 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ type: 'INHERITANCE', key: group })
             });
             if (res.ok) {
+                // Refresh using stored UUID
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
                 fetchAuditLogs();
             } else {
@@ -1265,44 +964,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Init
     checkServerStatus();
-
-    // Footer Modals
-    const privacyLink = document.getElementById('privacyLink');
-    const termsLink = document.getElementById('termsLink');
-    const privacyModal = document.getElementById('privacyModal');
-    const termsModal = document.getElementById('termsModal');
-    const closePrivacyBtn = document.getElementById('closePrivacyBtn');
-    const closeTermsBtn = document.getElementById('closeTermsBtn');
-
-    // Privacy Policy
-    privacyLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        privacyModal.classList.remove('hidden');
-    });
-
-    closePrivacyBtn.addEventListener('click', () => {
-        privacyModal.classList.add('hidden');
-    });
-
-    privacyModal.addEventListener('click', (e) => {
-        if (e.target === privacyModal) {
-            privacyModal.classList.add('hidden');
-        }
-    });
-
-    // Terms & Conditions
-    termsLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        termsModal.classList.remove('hidden');
-    });
-
-    closeTermsBtn.addEventListener('click', () => {
-        termsModal.classList.add('hidden');
-    });
-
-    termsModal.addEventListener('click', (e) => {
-        if (e.target === termsModal) {
-            termsModal.classList.add('hidden');
-        }
-    });
 });

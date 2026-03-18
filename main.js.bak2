@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         linked: false,
         token: null,
         groups: [],
-        currentProfileUuid: null, // Track current profile
+        currentProfileUuid: null,
         sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
     };
 
@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent.classList.add('collapsed');
     }
     
-    // Event listener for toggle button
     sidebarToggle.addEventListener('click', toggleSidebar);
     
     // Init Settings
@@ -50,13 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navigation
     function navigate(targetId) {
-        // Hide ALL views first
         views.forEach(view => {
             view.classList.add('hidden');
             view.classList.remove('active');
         });
 
-        // Show the specific normal view
         const targetView = document.getElementById(`${targetId}-view`);
         if (targetView) {
             targetView.classList.remove('hidden');
@@ -67,9 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.toggle('active', link.dataset.target === targetId);
         });
 
-        // Fetch audit logs immediately when entering audit view
+        // Fetch audit logs immediately when entering the audit view
         if (targetId === 'audit') {
-            fetchAuditLogs(true);
+            fetchAuditLogs();
         }
     }
     
@@ -80,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const target = link.dataset.target;
-            // Solo navegar si está vinculado o es settings
             if (target === 'settings' || state.linked) {
                 if (target) navigate(target);
             } else {
@@ -101,31 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Auth check (subtle, doesn't redirect)
     function checkAuth() {
         if (typeof authService !== 'undefined') {
             console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
         }
     }
-
     setTimeout(checkAuth, 500);
 
     /**
-     * Lógica del Modal de Logout Personalizado
+     * Logout Modal Logic
      */
     const logoutModal = document.getElementById('confirmLogoutModal');
     const confirmLogoutBtn = document.getElementById('confirmLogoutSubmitBtn');
     const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
 
     function openLogoutModal() {
-        if (logoutModal) {
-            logoutModal.classList.remove('hidden');
-        }
+        if (logoutModal) logoutModal.classList.remove('hidden');
     }
 
     function closeLogoutModal() {
-        if (logoutModal) {
-            logoutModal.classList.add('hidden');
-        }
+        if (logoutModal) logoutModal.classList.add('hidden');
     }
 
     if (confirmLogoutBtn) {
@@ -140,11 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const logoutBtnTop = document.getElementById('logoutBtnTop');
-
-    // The original `logoutBtn` variable is not defined in this scope.
-    // Assuming `confirmLogoutBtn` is the primary logout trigger from the modal.
-    // The instruction implies `logoutBtn` might be another element, but it's not in the provided code.
-    // For now, only `logoutBtnTop` is handled as per the instruction.
     if (logoutBtnTop) logoutBtnTop.addEventListener('click', () => {
         if (typeof authService !== 'undefined' && authService) authService.logout();
     });
@@ -153,56 +140,40 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelLogoutBtn.addEventListener('click', closeLogoutModal);
     }
 
-    // Cerrar al hacer clic fuera del contenido
     window.addEventListener('click', (e) => {
-        if (e.target === logoutModal) {
-            closeLogoutModal();
-        }
+        if (e.target === logoutModal) closeLogoutModal();
     });
+
     /**
-     * Actualiza la interfaz de usuario con los datos del usuario
+     * User UI Update (auth integration)
      */
     function updateUserUI() {
         const userBadge = document.getElementById('userDisplayName');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtnTop = document.getElementById('logoutBtnTop');
+        const loginBtnEl = document.getElementById('loginBtn');
+        const logoutBtnTopEl = document.getElementById('logoutBtnTop');
         
-        if (!userBadge || !loginBtn) return;
+        if (!userBadge || !loginBtnEl) return;
 
         const statusText = userBadge.querySelector('.status-text');
 
         if (typeof authService !== 'undefined' && authService && authService.isAuthenticated()) {
             const user = authService.getCurrentUser();
-            console.log('[DEBUG] User is authenticated:', user);
-            
-            // Show username in red box area (navbar center)
             if (statusText) {
-                // Try different properties based on common auth response patterns
                 statusText.textContent = user.name || user.displayName || user.username || user.email || 'Usuario';
             }
             userBadge.classList.remove('hidden');
-            
-            // Handle Green Box area (Logout after login)
-            if (loginBtn) loginBtn.classList.add('hidden');
-            if (logoutBtnTop) logoutBtnTop.classList.remove('hidden');
+            if (loginBtnEl) loginBtnEl.classList.add('hidden');
+            if (logoutBtnTopEl) logoutBtnTopEl.classList.remove('hidden');
         } else {
-            console.log('[DEBUG] User is not authenticated');
             if (statusText) statusText.textContent = 'Bienvenido';
             userBadge.classList.add('hidden');
-            
-            if (loginBtn) loginBtn.classList.remove('hidden');
-            if (logoutBtnTop) logoutBtnTop.classList.add('hidden');
+            if (loginBtnEl) loginBtnEl.classList.remove('hidden');
+            if (logoutBtnTopEl) logoutBtnTopEl.classList.add('hidden');
         }
     }
 
-    // Hacer disponible globalmente para AuthService
     window.updateUserUI = updateUserUI;
-
-    // Inicializar UI de usuario inmediatamente
     updateUserUI();
-    
-    // Y de nuevo cuando el DOM esté completamente cargado para asegurar que AuthService existe
-    document.addEventListener('DOMContentLoaded', updateUserUI);
 
     disconnectBtn.addEventListener('click', () => {
         if(confirm("Are you sure you want to disconnect?")) {
@@ -223,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /**
-     * Lógica de Modal Informativo General
+     * General Info Modal (replaces alerts)
      */
     const infoModal = document.getElementById('generalInfoModal');
     const infoTitle = document.getElementById('infoModalTitle');
@@ -245,11 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar al hacer clic fuera
     window.addEventListener('click', (e) => {
-        if (e.target === infoModal) {
-            infoModal.classList.add('hidden');
-        }
+        if (e.target === infoModal) infoModal.classList.add('hidden');
     });
 
     // Link Logic
@@ -282,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.textContent = 'Error: ' + e.message;
             msg.style.color = 'var(--danger)';
             
-            // DEMO MODE fallback
             console.log("Failed to connect to real API, asking for Demo Mode...");
             if (confirm("Could not connect to server at " + state.apiUrl + ". \n\nDo you want to enable DEMO MODE to preview the panel?")) {
                  state.linked = true;
@@ -297,38 +264,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusText = document.getElementById('serverStatusText');
         if (online) {
             if (statusText) statusText.textContent = 'Connected';
-            serverStatus.classList.remove('offline');
-            serverStatus.classList.add('online');
+            serverStatus.classList.remove('status-offline');
+            serverStatus.classList.add('status-online');
             linkBtn.classList.add('hidden');
             disconnectBtn.classList.remove('hidden');
-            loadGroups(); // Cargar grupos al conectar
-            loadUsersList(); // Cargar usuarios al conectar
+            loadGroups();
+            loadUsersList();
             
-            // Actualizar uptime si está disponible en state o mock
             const uptimeEl = document.getElementById('uptime');
             if (uptimeEl && uptimeEl.textContent === '--') {
                 uptimeEl.textContent = 'Online';
             }
         } else {
             if (statusText) statusText.textContent = 'Disconnected';
-            serverStatus.classList.add('offline');
-            serverStatus.classList.remove('online');
+            serverStatus.classList.add('status-offline');
+            serverStatus.classList.remove('status-online');
             linkBtn.classList.remove('hidden');
             disconnectBtn.classList.add('hidden');
             
-            // Limpiar datos visuales de la sesión anterior
             document.getElementById('groupsTableBody').innerHTML = '';
             document.getElementById('usersTableBody').innerHTML = '';
             document.getElementById('userCount').textContent = '--';
             document.getElementById('groupCount').textContent = '--';
             document.getElementById('uptime').textContent = '--';
             
-            // Cerrar perfil si está abierto
+            userInfoContainer.style.display = 'none';
             userInfoContainer.classList.add('hidden');
-            usersListContainer.classList.remove('hidden');
+            usersListContainer.style.display = 'block';
             state.currentProfileUuid = null;
             
-            // Volver a la pantalla de inicio/link para evitar ver datos estáticos
             navigate('link');
         }
     }
@@ -337,50 +301,33 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${state.apiUrl}/ping`);
             if (res.ok) {
-                // Si el servidor vuelve, actualizamos el estado visual si estaba desconectado
-                // PERO solo si estamos lógicamente vinculados
-                if (state.linked && serverStatus.classList.contains('offline')) {
+                if (state.linked && serverStatus.classList.contains('status-offline')) {
                     updateStatus(true);
-                    navigate('dashboard'); // Volver al dashboard automáticamente
+                    navigate('dashboard');
                 }
                 return true;
             } else {
-                // Solo mostramos desconexión si estábamos vinculados
-                if (state.linked) {
-                    updateStatus(false);
-                } else {
-                    // Sin vincular: mantener rojo
-                    serverStatus.classList.add('offline');
-                    serverStatus.classList.remove('online');
-                }
+                if (state.linked) updateStatus(false);
                 return false;
             }
         } catch (e) {
-            if (state.linked) {
-                updateStatus(false);
-            } else {
-                // Sin vincular: mantener rojo
-                serverStatus.classList.add('offline');
-                serverStatus.classList.remove('online');
-            }
+            if (state.linked) updateStatus(false);
             return false;
         }
     }
     
-    // Polling para tiempo real (cada 2 segundos si está vinculado)
+    // Polling (every 2 seconds when linked)
     setInterval(async () => {
         if (state.linked) {
-            // Primero verificamos estado
             const isOnline = await checkServerStatus();
             if (isOnline) {
                 loadGroups();
                 loadUsersList();
                 
-                // Si hay un perfil abierto y visible, lo actualizamos en segundo plano
                 if (state.currentProfileUuid && !userInfoContainer.classList.contains('hidden')) {
                     refreshUserProfile(state.currentProfileUuid);
                 }
-
+                
                 // Update audit if visible
                 if (!document.getElementById('audit-view').classList.contains('hidden')) {
                     fetchAuditLogs();
@@ -394,13 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${state.apiUrl}/users/${uuid}?_=${Date.now()}`);
             if (res.ok) {
                 const user = await res.json();
-                // Solo renderizamos si seguimos en el mismo perfil (por si cambió rápido)
                 if (state.currentProfileUuid === uuid) {
                     renderUser(user);
                 }
             }
         } catch (e) {
-            // Silencioso en background
             console.error("Error refreshing profile:", e);
         }
     }
@@ -436,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // Expose global functions for onclick
+    // Global functions for onclick
     window.deleteGroup = async (name) => {
         if (!confirm(`Delete group ${name}?`)) return;
         
@@ -451,10 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadGroups();
                 fetchAuditLogs();
             } else {
-                alert("Failed to delete group");
+                alert('Failed to delete group');
             }
         } catch (e) {
-            alert("Error: " + e.message);
+            console.error(e);
         }
     };
 
@@ -462,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Edit group " + name);
     };
 
-    // Crear grupo
+    // Create group
     document.getElementById('createGroupBtn').addEventListener('click', async () => {
         const name = prompt("Enter group name:");
         if (!name) return;
@@ -475,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (res.ok) {
-                loadGroups(); // Recargar lista
+                loadGroups();
                 fetchAuditLogs();
             } else {
                 alert("Failed to create group");
@@ -486,54 +431,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- AUDIT LOG ---
-    document.getElementById('refreshAuditBtn').addEventListener('click', () => fetchAuditLogs(true));
+    document.getElementById('refreshAuditBtn').addEventListener('click', fetchAuditLogs);
 
-    async function fetchAuditLogs(showSpinner = false) {
-        const tbody = document.getElementById('auditTableBody');
-        if (!tbody) return;
-        
-        // Solo mostrar spinner en carga manual (navegar a la vista o botón Refresh).
-        // En el polling automático NO se limpia la tabla para evitar parpadeo.
-        if (showSpinner) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);"><span style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:8px;"></span> Cargando...</td></tr>';
-        }
-        
-        let res;
+    async function fetchAuditLogs() {
         try {
-            res = await fetch(`${state.apiUrl}/audit`);
+            const res = await fetch(`${state.apiUrl}/audit`);
+            if (res.ok) {
+                const logs = await res.json();
+                renderAuditLogs(logs);
+            }
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">❌ Sin conexión al servidor (${e.message}). Verifica que Minecraft esté corriendo.</td></tr>`;
-            console.error("[Audit] Network error:", e);
-            return;
+            console.error("Error loading audit logs", e);
         }
-
-        let rawText;
-        try { rawText = await res.text(); } catch (e) { return; }
-
-        if (!res.ok) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ Error HTTP ${res.status}: ${rawText.substring(0, 200)}</td></tr>`;
-            console.error("[Audit] HTTP error:", res.status, rawText);
-            return;
-        }
-
-        let logs;
-        try {
-            logs = JSON.parse(rawText);
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ JSON inválido: ${rawText.substring(0, 300)}</td></tr>`;
-            console.error("[Audit] JSON error:", e, rawText);
-            return;
-        }
-
-        renderAuditLogs(logs);
     }
 
     function renderAuditLogs(logs) {
         const tbody = document.getElementById('auditTableBody');
         if (!tbody) return;
         
-        if (!Array.isArray(logs) || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No hay logs de auditoría. Realiza alguna acción (crear grupo, editar usuario, etc.) para generar registros.</td></tr>';
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No logs found.</td></tr>';
             return;
         }
 
@@ -544,128 +461,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (log.action.includes('REMOVE')) actionColor = 'var(--danger)';
             if (log.action.includes('LINK')) actionColor = 'var(--primary)';
 
-            // Escapar HTML para prevenir XSS
-            const escapeHtml = (str) => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(log.targetId);
-            const targetDisplay = isUuid
-                ? `<span style="cursor:pointer; color:var(--text-primary);"
-                       onclick="navigator.clipboard.writeText('${escapeHtml(log.targetId)}')"
-                       title="UUID: ${escapeHtml(log.targetId)} — Click para copiar">${escapeHtml(log.targetName || log.targetId)}</span>`
-                : `<code style="background: var(--bg-dark); padding: 0.2rem 0.4rem; border-radius: 4px;">${escapeHtml(log.targetName || log.targetId)}</code>`;
-
             return `
             <tr>
-                <td style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(date)}</td>
-                <td style="color: var(--primary);">${escapeHtml(log.actorName)}</td>
-                <td style="color: ${actionColor}; font-weight: bold;">${escapeHtml(log.action)}</td>
-                <td>${targetDisplay}</td>
-                <td style="color: var(--text-secondary); font-size: 0.9rem;">${escapeHtml(log.details)}</td>
+                <td style="color: var(--text-secondary); font-size: 0.85rem;">${date}</td>
+                <td style="color: var(--primary);">${log.actorName}</td>
+                <td style="color: ${actionColor}; font-weight: bold;">${log.action}</td>
+                <td><code style="background: var(--bg-dark); padding: 0.2rem 0.4rem; border-radius: 4px;">${log.targetId}</code></td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">${log.details}</td>
             </tr>
             `;
         }).join('');
-    }
-
-    // --- Debug / Simulation ---
-
-    const debugCheckBtn = document.getElementById('debugCheckBtn');
-    const debugUserInput = document.getElementById('debugUserInput');
-    const debugPermInput = document.getElementById('debugPermInput');
-    const debugResultContainer = document.getElementById('debugResultContainer');
-
-    if (debugCheckBtn) {
-        debugCheckBtn.addEventListener('click', async () => {
-            const user = (debugUserInput.value || '').trim();
-            const perm = (debugPermInput.value || '').trim();
-            if (!user || !perm) return;
-            debugCheckBtn.disabled = true;
-            debugCheckBtn.textContent = 'Checking…';
-            try {
-                const res = await fetch(`${state.apiUrl}/debug?user=${encodeURIComponent(user)}&permission=${encodeURIComponent(perm)}`);
-                const data = await res.json();
-                if (!res.ok) {
-                    renderDebugError(data.error || `HTTP ${res.status}`);
-                } else {
-                    renderDebugResult(data);
-                }
-            } catch (err) {
-                renderDebugError('Failed to reach server: ' + err.message);
-            } finally {
-                debugCheckBtn.disabled = false;
-                debugCheckBtn.textContent = 'Check';
-            }
-        });
-
-        // Allow pressing Enter in the permission input to trigger check
-        debugPermInput && debugPermInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') debugCheckBtn.click();
-        });
-    }
-
-    function renderDebugError(msg) {
-        const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        debugResultContainer.innerHTML = `<div class="card" style="border:1px solid var(--danger); padding:1rem; color:var(--danger);">${escapeHtml(msg)}</div>`;
-    }
-
-    function renderDebugResult(data) {
-        const escapeHtml = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-        const resultColor = data.result === 'ALLOW' ? 'var(--success)'
-                          : data.result === 'DENY'  ? 'var(--danger)'
-                          : 'var(--text-secondary)';
-
-        const actionBadge = (action) => {
-            const colors = {
-                MATCHED:         'var(--success)',
-                DENY_MATCHED:    'var(--danger)',
-                SKIPPED_EXPIRED: '#f59e0b',
-                SKIPPED_CONTEXT: '#6366f1',
-                UNDEFINED:       'var(--text-secondary)',
-            };
-            const c = colors[action] || 'var(--text-secondary)';
-            return `<span style="font-size:0.75rem; font-weight:600; color:${c}; background:${c}22; padding:0.15rem 0.5rem; border-radius:4px;">${escapeHtml(action)}</span>`;
-        };
-
-        const stepsHtml = (data.steps || []).map(s => `
-            <tr>
-                <td style="color:var(--primary);">${escapeHtml(s.source)}</td>
-                <td>${actionBadge(s.action)}</td>
-                <td style="font-family:monospace;">${s.nodeKey ? escapeHtml(s.nodeKey) : '<span style="color:var(--text-secondary);">—</span>'}</td>
-                <td>${s.nodeKey ? `<span style="color:${s.nodeValue ? 'var(--success)' : 'var(--danger)'};">${s.nodeValue ? 'true' : 'false'}</span>` : ''}</td>
-                <td style="color:var(--text-secondary); font-size:0.85rem;">${escapeHtml(s.detail)}</td>
-            </tr>`).join('');
-
-        debugResultContainer.innerHTML = `
-            <div class="card" style="margin-bottom:1rem; padding:1.25rem;">
-                <div style="display:flex; gap:2rem; align-items:center; flex-wrap:wrap;">
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Player</div>
-                        <div style="font-weight:600; color:var(--text-primary);">${escapeHtml(data.user)}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Permission</div>
-                        <div style="font-family:monospace; color:var(--text-primary);">${escapeHtml(data.permission)}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Result</div>
-                        <div style="font-size:1.2rem; font-weight:700; color:${resultColor};">${escapeHtml(data.result)}</div>
-                    </div>
-                    ${data.origin ? `<div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Origin</div>
-                        <div style="color:var(--text-primary);">${escapeHtml(data.origin)}</div>
-                    </div>` : ''}
-                </div>
-            </div>
-            ${stepsHtml ? `
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Source</th><th>Action</th><th>Node</th><th>Value</th><th>Detail</th></tr>
-                    </thead>
-                    <tbody>${stepsHtml}</tbody>
-                </table>
-            </div>` : ''}
-        `;
     }
 
     // --- DEBUG MODE ---
@@ -681,18 +486,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInfoContainer = document.getElementById('userInfoContainer');
     const usersListContainer = document.getElementById('usersListContainer');
     
-    // Función centralizada para buscar y abrir perfil
     async function performUserSearch(query) {
         log("Searching user:", query);
         if (!query) return;
         
         try {
-            // Add timestamp to prevent caching
             const res = await fetch(`${state.apiUrl}/users/${encodeURIComponent(query)}?_=${Date.now()}`);
             if (res.ok) {
                 const user = await res.json();
                 log("User found:", user);
-                state.currentProfileUuid = user.uuid; // Store UUID
+                state.currentProfileUuid = user.uuid;
                 renderUser(user);
                 openProfileView();
             } else {
@@ -701,15 +504,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (e) {
             console.error("Search error:", e);
-            // Si falla la conexión, ABRIMOS el perfil igual pero con mensaje de error
-            // Esto confirma que el botón funciona, pero la red no.
             renderUserError(query, e.message);
             openProfileView();
         }
     }
 
     function openProfileView() {
-        usersListContainer.classList.add('hidden');
+        usersListContainer.style.display = 'none';
+        userInfoContainer.style.display = 'block'; 
         userInfoContainer.classList.remove('hidden');
         log("View switched to Profile");
     }
@@ -736,25 +538,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 const users = await res.json();
                 
-                // Filtrar duplicados por NOMBRE (priorizando el que esté ONLINE)
                 const uniqueUsersMap = new Map();
-                
                 users.forEach(user => {
                     const existing = uniqueUsersMap.get(user.username);
                     if (!existing) {
-                        // Si no existe, lo añadimos
                         uniqueUsersMap.set(user.username, user);
                     } else {
-                        // Si ya existe, nos quedamos con el que esté ONLINE
                         if (user.online && !existing.online) {
                             uniqueUsersMap.set(user.username, user);
                         }
-                        // Si ambos están offline u online, da igual cuál (o el que tenga UUID real si pudiéramos saberlo)
                     }
                 });
                 
                 const uniqueUsers = Array.from(uniqueUsersMap.values());
-                
                 renderUsersList(uniqueUsers);
                 document.getElementById('userCount').textContent = uniqueUsers.length;
             }
@@ -767,14 +563,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.getElementById('usersTableBody');
         if (!tbody) return;
         
-        // Ordenar: Online primero, luego alfabéticamente
         users.sort((a, b) => {
             if (a.online === b.online) return a.username.localeCompare(b.username);
             return a.online ? -1 : 1;
         });
         
-        // Usar minotar.net en lugar de crafatar para mayor estabilidad si crafatar falla
-        // O usar crafatar con fallback
         tbody.innerHTML = users.map(u => `
             <tr>
                 <td>
@@ -796,24 +589,23 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
     
-    // Delegación de eventos en el padre (tbody) para evitar problemas de re-renderizado
+    // Event delegation
     document.getElementById('usersTableBody').addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('manage-profile-btn')) {
             e.preventDefault();
             const uuid = e.target.getAttribute('data-uuid');
-            console.log("Manage Profile Clicked for UUID:", uuid); // Debug
             performUserSearch(uuid);
         }
     });
     
-    // Botón de cerrar perfil con listener explícito
     document.getElementById('closeProfileBtn').addEventListener('click', () => {
+        userInfoContainer.style.display = 'none';
         userInfoContainer.classList.add('hidden');
+        usersListContainer.style.display = 'block';
         usersListContainer.classList.remove('hidden');
         userSearchInput.value = '';
     });
     
-    // Fallback global por si se llama desde inline (aunque intentamos evitarlo)
     window.searchUserByUuid = async (uuid) => {
         userSearchInput.value = uuid;
         await performUserSearch(uuid);
@@ -828,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInfoContainer.classList.remove('hidden');
         document.getElementById('userNameDisplay').textContent = user.username;
         document.getElementById('userUuidDisplay').textContent = user.uuid;
-        // Usar Minotar también aquí
         document.getElementById('userHeadDisplay').src = `https://minotar.net/helm/${user.uuid}/48.png`;
         document.getElementById('userHeadDisplay').onerror = function() { this.src = 'https://minotar.net/helm/MHF_Steve/48.png'; };
 
@@ -858,17 +649,17 @@ document.addEventListener('DOMContentLoaded', () => {
             permsList.innerHTML = '<li style="color: var(--text-secondary); font-size: 0.875rem;">No direct permissions</li>';
         }
 
-        // Render Meta (Prefix/Suffix)
+        // Render Meta (Prefix/Suffix) - uses encodeURIComponent for safe onclick
         const metaList = document.getElementById('userMetaList');
         if (user.meta && user.meta.length > 0) {
             metaList.innerHTML = user.meta.map(m => `
-                <li style="padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
+                <li style="padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; display: flex; justify-content: space-between; align-items: center; overflow: hidden;">
+                    <div style="flex: 1; min-width: 0; margin-right: 0.5rem;">
                         <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: bold; margin-right: 0.5rem;">${m.type}</span>
-                        <span style="font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 2px;">${formatMinecraftText(m.value)}</span>
+                        <span style="font-family: 'Minecraft', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 2px;">${formatMinecraftText(m.value)}</span>
                         <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">(P: ${m.priority})</span>
                     </div>
-                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${encodeURIComponent(m.value)}')">X</button>
+                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem; flex-shrink: 0;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${encodeURIComponent(m.value)}')">X</button>
                 </li>
             `).join('');
         } else {
@@ -902,16 +693,16 @@ document.addEventListener('DOMContentLoaded', () => {
         tabSimpleBtn.style.background = 'transparent';
     });
 
-    // Color/Format Buttons Logic
+    // Color/Format Buttons
     document.querySelectorAll('.color-btn, .format-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', () => {
             const code = btn.getAttribute('data-code');
             insertAtCursor(metaContentInput, code);
             updatePreview();
         });
     });
 
-    // Multi-Stop Gradient Logic
+    // --- Multi-Stop Gradient Tool ---
     const gradStopsContainer = document.getElementById('gradStopsContainer');
     const addGradStopBtn = document.getElementById('addGradStopBtn');
     const gradBoldBtn = document.getElementById('gradBoldBtn');
@@ -1021,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('addMetaBtn').addEventListener('click', () => {
         metaModal.classList.remove('hidden');
-        metaModal.style.display = 'flex'; // Force flex
+        metaModal.style.display = 'flex';
         metaContentInput.value = '';
         metaContentInput.focus();
         updatePreview();
@@ -1041,7 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!content) return;
 
         try {
-            // We use the same 'nodes' endpoint. For PREFIX/SUFFIX, key=priority, value=content
             const res = await fetch(`${state.apiUrl}/users/${uuid}/nodes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1090,11 +880,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let i = 0;
         while (i < text.length) {
-            // Check for Hex color: &#RRGGBB
-            if (text[i] === '&' && text[i+1] === '#') {
+            if (text[i] === '&' && i + 1 < text.length && text[i+1] === '#') {
                 if (i + 7 < text.length) {
                     const hex = text.substring(i + 2, i + 8);
-                    // Validate hex
                     if (/^[0-9A-Fa-f]{6}$/.test(hex)) {
                         currentColor = '#' + hex;
                         isBold = false; isItalic = false; isUnderline = false;
@@ -1104,7 +892,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Check for Legacy code: &c
             if (text[i] === '&') {
                 if (i + 1 < text.length) {
                     const code = text[i+1].toLowerCase();
@@ -1125,7 +912,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Render char
             let style = `color: ${currentColor};`;
             if (isBold) style += 'font-weight: bold;';
             if (isItalic) style += 'font-style: italic;';
@@ -1138,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
-    // Expose User Actions
+    // User Actions (with encodeURIComponent for meta values)
     window.removeUserMeta = async (uuid, type, priority, encodedValue) => {
         const value = decodeURIComponent(encodedValue);
         if (!confirm(`Remove this ${type}?`)) return;
@@ -1157,7 +943,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { alert(e.message); }
     };
 
-    // Expose User Actions
     window.removeUserGroup = async (uuid, group) => {
         if (!confirm(`Remove group ${group} from user?`)) return;
         try {
@@ -1194,8 +979,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('addUserGroupBtn').addEventListener('click', async () => {
         const uuid = document.getElementById('userUuidDisplay').textContent;
-        // Use custom modal or prompt. For autocomplete, prompt is not enough.
-        // For now we keep prompt but ensure refresh works.
         const group = prompt("Enter group name to inherit:");
         if (!group) return;
         
@@ -1266,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init
     checkServerStatus();
 
-    // Footer Modals
+    // --- Footer Modals ---
     const privacyLink = document.getElementById('privacyLink');
     const termsLink = document.getElementById('termsLink');
     const privacyModal = document.getElementById('privacyModal');
@@ -1274,7 +1057,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closePrivacyBtn = document.getElementById('closePrivacyBtn');
     const closeTermsBtn = document.getElementById('closeTermsBtn');
 
-    // Privacy Policy
     privacyLink.addEventListener('click', (e) => {
         e.preventDefault();
         privacyModal.classList.remove('hidden');
@@ -1285,12 +1067,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     privacyModal.addEventListener('click', (e) => {
-        if (e.target === privacyModal) {
-            privacyModal.classList.add('hidden');
-        }
+        if (e.target === privacyModal) privacyModal.classList.add('hidden');
     });
 
-    // Terms & Conditions
     termsLink.addEventListener('click', (e) => {
         e.preventDefault();
         termsModal.classList.remove('hidden');
@@ -1301,8 +1080,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     termsModal.addEventListener('click', (e) => {
-        if (e.target === termsModal) {
-            termsModal.classList.add('hidden');
-        }
+        if (e.target === termsModal) termsModal.classList.add('hidden');
     });
 });
