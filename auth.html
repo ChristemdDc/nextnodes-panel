@@ -193,8 +193,8 @@
                 required
               />
               <label for="signup-terms">
-                Acepto los <a href="#" onclick="openModal('privacyModal'); return false;">Términos y Condiciones</a> 
-                y la <a href="#" onclick="openModal('termsModal'); return false;">Política de Privacidad</a>
+                Acepto los <a href="#" onclick="openModal('termsModal'); return false;">Términos y Condiciones</a> 
+                y la <a href="#" onclick="openModal('privacyModal'); return false;">Política de Privacidad</a>
               </label>
             </div>
 
@@ -392,9 +392,66 @@
         <button class="modal-close" onclick="closeModal('privacyModal')">&times;</button>
       </div>
       <div class="modal-body">
-          <h3>1. Introducción</h3>
-          <p>Esta Política de Privacidad explica qué datos recopila NextNodes, cómo los utiliza...</p>
-          <!-- Simplified for brevity, will copy full content if needed or link to original -->
+        <h3>1. Introducción</h3>
+        <p>Esta Política de Privacidad explica qué datos recopila NextNodes Panel (en adelante, “el Panel”), cómo los utiliza, cómo los protege y los derechos que tienes sobre ellos. Al usar el Panel, aceptas las prácticas descritas en esta política.</p>
+
+        <h3>2. Datos que recopilamos</h3>
+        <h4>2.1 Datos de cuenta</h4>
+        <ul>
+          <li><strong>Nombre visible:</strong> El nombre que eliges al registrarte, usado para identificarte en el Panel.</li>
+          <li><strong>Correo electrónico:</strong> Usado para autenticación, recuperación de contraseña y comunicaciones del sistema.</li>
+          <li><strong>Contraseña:</strong> Almacenada de forma segura usando hashing (argon2). Nunca la almacenamos en texto plano.</li>
+        </ul>
+        <h4>2.2 Datos del servidor Minecraft</h4>
+        <ul>
+          <li><strong>UUID de jugadores:</strong> Identificadores únicos de los jugadores gestionados a través del Panel.</li>
+          <li><strong>Nombres de usuario:</strong> Nombres de los jugadores de Minecraft vinculados al servidor.</li>
+          <li><strong>Permisos y grupos:</strong> Configuraciones de permisos y grupos asignados a jugadores.</li>
+          <li><strong>Registros de auditoría:</strong> Historial de acciones realizadas desde el Panel (quién hizo qué y cuándo).</li>
+        </ul>
+        <h4>2.3 Datos técnicos</h4>
+        <ul>
+          <li>Dirección IP del servidor Minecraft vinculado.</li>
+          <li>Tokens de sesión temporales para autenticación.</li>
+        </ul>
+
+        <h3>3. Cómo usamos los datos</h3>
+        <ul>
+          <li>Proporcionar y mantener el funcionamiento del Panel de administración.</li>
+          <li>Autenticar tu identidad de forma segura en cada sesión.</li>
+          <li>Gestionar los permisos del servidor Minecraft de forma remota.</li>
+          <li>Mantener registros de auditoría para uso administrativo del servidor.</li>
+          <li>Enviarte notificaciones del sistema cuando sea necesario.</li>
+        </ul>
+
+        <h3>4. Almacenamiento y seguridad</h3>
+        <p>Los datos se almacenan localmente en la base de datos H2 del servidor Minecraft y en la base de datos SQLite del backend del Panel. Implementamos las siguientes medidas de seguridad:</p>
+        <ul>
+          <li>Contraseñas cifradas con <strong>argon2</strong>, el estándar más robusto disponible.</li>
+          <li>Sesiones protegidas con tokens <strong>JWT</strong> con caducidad.</li>
+          <li>Comunicación cifrada recomendada mediante HTTPS entre el Panel y el servidor.</li>
+        </ul>
+
+        <h3>5. Compartir datos</h3>
+        <p>NextNodes <strong>no vende, no alquila ni comparte</strong> tus datos personales con terceros. Los datos solo se utilizan dentro del sistema del Panel para las finalidades descritas en este documento.</p>
+
+        <h3>6. Retención de datos</h3>
+        <p>Los datos se conservan mientras tengas una cuenta activa en el Panel. Los registros de auditoría se retienen según la configuración del administrador del servidor. Puedes solicitar la eliminación de tus datos contactando al administrador de tu servidor.</p>
+
+        <h3>7. Tus derechos</h3>
+        <ul>
+          <li><strong>Acceso:</strong> Puedes solicitar ver los datos que tenemos sobre ti.</li>
+          <li><strong>Rectificación:</strong> Puedes corregir datos incorrectos desde la configuración de cuenta.</li>
+          <li><strong>Eliminación:</strong> Puedes solicitar la eliminación de tu cuenta y datos asociados.</li>
+          <li><strong>Portabilidad:</strong> Puedes solicitar una copia de tus datos en formato legible.</li>
+        </ul>
+
+        <h3>8. Cambios en esta política</h3>
+        <p>Podemos actualizar esta Política de Privacidad ocasionalmente. Te notificaremos de cambios significativos a través del Panel. El uso continuado del Panel tras los cambios implica la aceptación de la política actualizada.</p>
+
+        <h3>9. Contacto</h3>
+        <p>Si tienes preguntas sobre esta Política de Privacidad, contacta al administrador de tu servidor NextNodes.</p>
+        <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.85rem;"><em>Última actualización: Marzo 2026</em></p>
       </div>
     </div>
   </div>
@@ -406,8 +463,61 @@
         <button class="modal-close" onclick="closeModal('termsModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <h3>1. Aceptación</h3>
-        <p>Al acceder o utilizar el panel web...</p>
+        <h3>1. Aceptación de los Términos</h3>
+        <p>Al acceder o utilizar el Panel de administración NextNodes (en adelante, “el Panel”), aceptas quedar vinculado por estos Términos y Condiciones. Si no estás de acuerdo con alguno de estos términos, no debes usar el Panel.</p>
+
+        <h3>2. Descripción del Servicio</h3>
+        <p>NextNodes Panel es una herramienta de administración para servidores Minecraft que permite:</p>
+        <ul>
+          <li>Gestionar permisos y grupos de jugadores de forma remota.</li>
+          <li>Configurar prefijos, sufijos y metadatos de jugadores.</li>
+          <li>Consultar registros de auditoría de cambios en el servidor.</li>
+          <li>Administrar grupos de permisos del servidor.</li>
+        </ul>
+
+        <h3>3. Uso Permitido</h3>
+        <p>Al usar el Panel te comprometes a:</p>
+        <ul>
+          <li>Usar el Panel únicamente para administrar servidores Minecraft que tú o tu organización operen legalmente.</li>
+          <li>No intentar acceder a servidores para los que no tienes autorización.</li>
+          <li>No usar el Panel para actividades ilegales o que violen los Términos de Servicio de Minecraft/Mojang.</li>
+          <li>Mantener la confidencialidad de tus credenciales de acceso.</li>
+          <li>Notificar inmediatamente al administrador si sospechas de acceso no autorizado.</li>
+        </ul>
+
+        <h3>4. Responsabilidades del Usuario</h3>
+        <p>Eres responsable de:</p>
+        <ul>
+          <li>Todas las acciones realizadas desde tu cuenta en el Panel.</li>
+          <li>Mantener actualizado el mod NextNodes en tu servidor Minecraft.</li>
+          <li>La seguridad de la clave de vinculación entre el Panel y tu servidor.</li>
+          <li>Las consecuencias de cambios de permisos realizados a través del Panel.</li>
+        </ul>
+
+        <h3>5. Limitación de Responsabilidad</h3>
+        <p>NextNodes Panel se proporciona <strong>“tal como está”</strong> sin garantías de ningún tipo. No somos responsables de:</p>
+        <ul>
+          <li>Pérdida de datos del servidor por mal uso del Panel.</li>
+          <li>Daños causados por configuraciones de permisos incorrectas.</li>
+          <li>Interrupciones del servicio por causas técnicas.</li>
+          <li>Accesos no autorizados producidos por credenciales comprometidas del usuario.</li>
+        </ul>
+
+        <h3>6. Propiedad Intelectual</h3>
+        <p>El código fuente de NextNodes se distribuye bajo la licencia open-source incluida en el repositorio. No puedes redistribuir versiones modificadas del Panel sin cumplir los términos de dicha licencia.</p>
+
+        <h3>7. Privacidad</h3>
+        <p>El tratamiento de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integrante de estos Términos y Condiciones.</p>
+
+        <h3>8. Modificaciones</h3>
+        <p>Nos reservamos el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor al ser publicados en el Panel. El uso continuado del Panel después de la publicación de cambios constituye tu aceptación de los nuevos términos.</p>
+
+        <h3>9. Terminación</h3>
+        <p>El administrador del servidor puede cancelar tu acceso al Panel en cualquier momento si incumples estos Términos. Tras la cancelación, dejarás de tener acceso a las funciones del Panel.</p>
+
+        <h3>10. Legislación Aplicable</h3>
+        <p>Estos Términos se rigen por la legislación aplicable en el país de residencia del operador del servidor. Cualquier disputa será resuelta mediante los procedimientos legales correspondientes.</p>
+        <p style="margin-top: 2rem; color: var(--text-secondary); font-size: 0.85rem;"><em>Última actualización: Marzo 2026</em></p>
       </div>
     </div>
   </div>

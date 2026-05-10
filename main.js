@@ -66,6 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
         navLinks.forEach(link => {
             link.classList.toggle('active', link.dataset.target === targetId);
         });
+
+        // Fetch audit logs immediately when entering audit view
+        if (targetId === 'audit') {
+            fetchAuditLogs(true);
+        }
     }
     
     // Expose navigate globally
@@ -89,23 +94,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loginBtn.addEventListener('click', () => {
-        if (authService && authService.isAuthenticated()) {
+        if (typeof authService !== 'undefined' && authService && authService.isAuthenticated()) {
             openLogoutModal();
         } else {
             window.location.href = 'auth.html';
         }
     });
 
-    // Redirección si no está autenticado (Desactivado para permitir vista previa)
     function checkAuth() {
-        console.log('[DEBUG] checkAuth running. authService ready?', typeof authService !== 'undefined');
         if (typeof authService !== 'undefined') {
-             console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
-             // No redirigimos automáticamente para permitir que el usuario vea el panel
+            console.log('[DEBUG] checkAuth: isAuthenticated?', authService.isAuthenticated());
         }
     }
 
-    // Ejecutar check de auth sutil
     setTimeout(checkAuth, 500);
 
     /**
@@ -129,12 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (confirmLogoutBtn) {
         confirmLogoutBtn.addEventListener('click', () => {
-            if (authService) {
+            if (typeof authService !== 'undefined' && authService) {
                 authService.logout();
                 closeLogoutModal();
-                // En lugar de auth-login que no existe, volvemos al estado inicial
                 navigate('dashboard');
-                window.location.reload(); // Recargar para limpiar todo el estado de golpe
+                window.location.reload();
             }
         });
     }
@@ -145,7 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Assuming `confirmLogoutBtn` is the primary logout trigger from the modal.
     // The instruction implies `logoutBtn` might be another element, but it's not in the provided code.
     // For now, only `logoutBtnTop` is handled as per the instruction.
-    if (logoutBtnTop) logoutBtnTop.addEventListener('click', () => authService.logout());
+    if (logoutBtnTop) logoutBtnTop.addEventListener('click', () => {
+        if (typeof authService !== 'undefined' && authService) authService.logout();
+    });
 
     if (cancelLogoutBtn) {
         cancelLogoutBtn.addEventListener('click', closeLogoutModal);
@@ -169,8 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const statusText = userBadge.querySelector('.status-text');
 
-        console.log('[DEBUG] updateUserUI running. authService ready?', !!authService);
-        if (authService && authService.isAuthenticated()) {
+        if (typeof authService !== 'undefined' && authService && authService.isAuthenticated()) {
             const user = authService.getCurrentUser();
             console.log('[DEBUG] User is authenticated:', user);
             
@@ -296,8 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusText = document.getElementById('serverStatusText');
         if (online) {
             if (statusText) statusText.textContent = 'Connected';
-            serverStatus.classList.remove('status-offline');
-            serverStatus.classList.add('status-online');
+            serverStatus.classList.remove('offline');
+            serverStatus.classList.add('online');
             linkBtn.classList.add('hidden');
             disconnectBtn.classList.remove('hidden');
             loadGroups(); // Cargar grupos al conectar
@@ -310,8 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             if (statusText) statusText.textContent = 'Disconnected';
-            serverStatus.classList.add('status-offline');
-            serverStatus.classList.remove('status-online');
+            serverStatus.classList.add('offline');
+            serverStatus.classList.remove('online');
             linkBtn.classList.remove('hidden');
             disconnectBtn.classList.add('hidden');
             
@@ -323,9 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('uptime').textContent = '--';
             
             // Cerrar perfil si está abierto
-            userInfoContainer.style.display = 'none';
             userInfoContainer.classList.add('hidden');
-            usersListContainer.style.display = 'block';
+            usersListContainer.classList.remove('hidden');
             state.currentProfileUuid = null;
             
             // Volver a la pantalla de inicio/link para evitar ver datos estáticos
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 // Si el servidor vuelve, actualizamos el estado visual si estaba desconectado
                 // PERO solo si estamos lógicamente vinculados
-                if (state.linked && serverStatus.classList.contains('status-offline')) {
+                if (state.linked && serverStatus.classList.contains('offline')) {
                     updateStatus(true);
                     navigate('dashboard'); // Volver al dashboard automáticamente
                 }
@@ -348,12 +348,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Solo mostramos desconexión si estábamos vinculados
                 if (state.linked) {
                     updateStatus(false);
+                } else {
+                    // Sin vincular: mantener rojo
+                    serverStatus.classList.add('offline');
+                    serverStatus.classList.remove('online');
                 }
                 return false;
             }
         } catch (e) {
             if (state.linked) {
                 updateStatus(false);
+            } else {
+                // Sin vincular: mantener rojo
+                serverStatus.classList.add('offline');
+                serverStatus.classList.remove('online');
             }
             return false;
         }
@@ -371,6 +379,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Si hay un perfil abierto y visible, lo actualizamos en segundo plano
                 if (state.currentProfileUuid && !userInfoContainer.classList.contains('hidden')) {
                     refreshUserProfile(state.currentProfileUuid);
+                }
+
+                // Update audit if visible
+                if (!document.getElementById('audit-view').classList.contains('hidden')) {
+                    fetchAuditLogs();
                 }
             }
         }
@@ -436,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (res.ok) {
                 loadGroups();
+                fetchAuditLogs();
             } else {
                 alert("Failed to delete group");
             }
@@ -462,6 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (res.ok) {
                 loadGroups(); // Recargar lista
+                fetchAuditLogs();
             } else {
                 alert("Failed to create group");
             }
@@ -470,8 +485,191 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- AUDIT LOG ---
+    document.getElementById('refreshAuditBtn').addEventListener('click', () => fetchAuditLogs(true));
+
+    async function fetchAuditLogs(showSpinner = false) {
+        const tbody = document.getElementById('auditTableBody');
+        if (!tbody) return;
+        
+        // Solo mostrar spinner en carga manual (navegar a la vista o botón Refresh).
+        // En el polling automático NO se limpia la tabla para evitar parpadeo.
+        if (showSpinner) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);"><span style="display:inline-block; width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:8px;"></span> Cargando...</td></tr>';
+        }
+        
+        let res;
+        try {
+            res = await fetch(`${state.apiUrl}/audit`);
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">❌ Sin conexión al servidor (${e.message}). Verifica que Minecraft esté corriendo.</td></tr>`;
+            console.error("[Audit] Network error:", e);
+            return;
+        }
+
+        let rawText;
+        try { rawText = await res.text(); } catch (e) { return; }
+
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ Error HTTP ${res.status}: ${rawText.substring(0, 200)}</td></tr>`;
+            console.error("[Audit] HTTP error:", res.status, rawText);
+            return;
+        }
+
+        let logs;
+        try {
+            logs = JSON.parse(rawText);
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">⚠️ JSON inválido: ${rawText.substring(0, 300)}</td></tr>`;
+            console.error("[Audit] JSON error:", e, rawText);
+            return;
+        }
+
+        renderAuditLogs(logs);
+    }
+
+    function renderAuditLogs(logs) {
+        const tbody = document.getElementById('auditTableBody');
+        if (!tbody) return;
+        
+        if (!Array.isArray(logs) || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No hay logs de auditoría. Realiza alguna acción (crear grupo, editar usuario, etc.) para generar registros.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const date = new Date(log.timestamp).toLocaleString();
+            let actionColor = 'var(--text-primary)';
+            if (log.action.includes('ADD')) actionColor = 'var(--success)';
+            if (log.action.includes('REMOVE')) actionColor = 'var(--danger)';
+            if (log.action.includes('LINK')) actionColor = 'var(--primary)';
+
+            // Escapar HTML para prevenir XSS
+            const escapeHtml = (str) => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(log.targetId);
+            const targetDisplay = isUuid
+                ? `<span style="cursor:pointer; color:var(--text-primary);"
+                       onclick="navigator.clipboard.writeText('${escapeHtml(log.targetId)}')"
+                       title="UUID: ${escapeHtml(log.targetId)} — Click para copiar">${escapeHtml(log.targetName || log.targetId)}</span>`
+                : `<code style="background: var(--bg-dark); padding: 0.2rem 0.4rem; border-radius: 4px;">${escapeHtml(log.targetName || log.targetId)}</code>`;
+
+            return `
+            <tr>
+                <td style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(date)}</td>
+                <td style="color: var(--primary);">${escapeHtml(log.actorName)}</td>
+                <td style="color: ${actionColor}; font-weight: bold;">${escapeHtml(log.action)}</td>
+                <td>${targetDisplay}</td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">${escapeHtml(log.details)}</td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    // --- Debug / Simulation ---
+
+    const debugCheckBtn = document.getElementById('debugCheckBtn');
+    const debugUserInput = document.getElementById('debugUserInput');
+    const debugPermInput = document.getElementById('debugPermInput');
+    const debugResultContainer = document.getElementById('debugResultContainer');
+
+    if (debugCheckBtn) {
+        debugCheckBtn.addEventListener('click', async () => {
+            const user = (debugUserInput.value || '').trim();
+            const perm = (debugPermInput.value || '').trim();
+            if (!user || !perm) return;
+            debugCheckBtn.disabled = true;
+            debugCheckBtn.textContent = 'Checking…';
+            try {
+                const res = await fetch(`${state.apiUrl}/debug?user=${encodeURIComponent(user)}&permission=${encodeURIComponent(perm)}`);
+                const data = await res.json();
+                if (!res.ok) {
+                    renderDebugError(data.error || `HTTP ${res.status}`);
+                } else {
+                    renderDebugResult(data);
+                }
+            } catch (err) {
+                renderDebugError('Failed to reach server: ' + err.message);
+            } finally {
+                debugCheckBtn.disabled = false;
+                debugCheckBtn.textContent = 'Check';
+            }
+        });
+
+        // Allow pressing Enter in the permission input to trigger check
+        debugPermInput && debugPermInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') debugCheckBtn.click();
+        });
+    }
+
+    function renderDebugError(msg) {
+        const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        debugResultContainer.innerHTML = `<div class="card" style="border:1px solid var(--danger); padding:1rem; color:var(--danger);">${escapeHtml(msg)}</div>`;
+    }
+
+    function renderDebugResult(data) {
+        const escapeHtml = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+        const resultColor = data.result === 'ALLOW' ? 'var(--success)'
+                          : data.result === 'DENY'  ? 'var(--danger)'
+                          : 'var(--text-secondary)';
+
+        const actionBadge = (action) => {
+            const colors = {
+                MATCHED:         'var(--success)',
+                DENY_MATCHED:    'var(--danger)',
+                SKIPPED_EXPIRED: '#f59e0b',
+                SKIPPED_CONTEXT: '#6366f1',
+                UNDEFINED:       'var(--text-secondary)',
+            };
+            const c = colors[action] || 'var(--text-secondary)';
+            return `<span style="font-size:0.75rem; font-weight:600; color:${c}; background:${c}22; padding:0.15rem 0.5rem; border-radius:4px;">${escapeHtml(action)}</span>`;
+        };
+
+        const stepsHtml = (data.steps || []).map(s => `
+            <tr>
+                <td style="color:var(--primary);">${escapeHtml(s.source)}</td>
+                <td>${actionBadge(s.action)}</td>
+                <td style="font-family:monospace;">${s.nodeKey ? escapeHtml(s.nodeKey) : '<span style="color:var(--text-secondary);">—</span>'}</td>
+                <td>${s.nodeKey ? `<span style="color:${s.nodeValue ? 'var(--success)' : 'var(--danger)'};">${s.nodeValue ? 'true' : 'false'}</span>` : ''}</td>
+                <td style="color:var(--text-secondary); font-size:0.85rem;">${escapeHtml(s.detail)}</td>
+            </tr>`).join('');
+
+        debugResultContainer.innerHTML = `
+            <div class="card" style="margin-bottom:1rem; padding:1.25rem;">
+                <div style="display:flex; gap:2rem; align-items:center; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Player</div>
+                        <div style="font-weight:600; color:var(--text-primary);">${escapeHtml(data.user)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Permission</div>
+                        <div style="font-family:monospace; color:var(--text-primary);">${escapeHtml(data.permission)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Result</div>
+                        <div style="font-size:1.2rem; font-weight:700; color:${resultColor};">${escapeHtml(data.result)}</div>
+                    </div>
+                    ${data.origin ? `<div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.2rem;">Origin</div>
+                        <div style="color:var(--text-primary);">${escapeHtml(data.origin)}</div>
+                    </div>` : ''}
+                </div>
+            </div>
+            ${stepsHtml ? `
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Source</th><th>Action</th><th>Node</th><th>Value</th><th>Detail</th></tr>
+                    </thead>
+                    <tbody>${stepsHtml}</tbody>
+                </table>
+            </div>` : ''}
+        `;
+    }
+
     // --- DEBUG MODE ---
-    const debugMode = true; // Activar logs detallados
+    const debugMode = true;
 
     function log(msg, ...args) {
         if (debugMode) console.log(`[NextNodes] ${msg}`, ...args);
@@ -511,8 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openProfileView() {
-        usersListContainer.style.display = 'none';
-        userInfoContainer.style.display = 'block'; 
+        usersListContainer.classList.add('hidden');
         userInfoContainer.classList.remove('hidden');
         log("View switched to Profile");
     }
@@ -611,13 +808,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Botón de cerrar perfil con listener explícito
     document.getElementById('closeProfileBtn').addEventListener('click', () => {
-        userInfoContainer.style.display = 'none';
         userInfoContainer.classList.add('hidden');
-        
-        usersListContainer.style.display = 'block';
         usersListContainer.classList.remove('hidden');
-        
-        // Limpiar búsqueda
         userSearchInput.value = '';
     });
     
@@ -676,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span style="font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 2px;">${formatMinecraftText(m.value)}</span>
                         <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">(P: ${m.priority})</span>
                     </div>
-                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${m.value.replace(/'/g, "\\'")}')">X</button>
+                    <button class="btn btn-danger" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;" onclick="removeUserMeta('${user.uuid}', '${m.type}', '${m.priority}', '${encodeURIComponent(m.value)}')">X</button>
                 </li>
             `).join('');
         } else {
@@ -719,42 +911,98 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Gradient Logic
+    // Multi-Stop Gradient Logic
+    const gradStopsContainer = document.getElementById('gradStopsContainer');
+    const addGradStopBtn = document.getElementById('addGradStopBtn');
+    const gradBoldBtn = document.getElementById('gradBoldBtn');
+    let isGradBold = false;
+
+    gradBoldBtn.addEventListener('click', () => {
+        isGradBold = !isGradBold;
+        gradBoldBtn.classList.toggle('active', isGradBold);
+    });
+
+    function createColorStop(hex) {
+        const div = document.createElement('div');
+        div.className = 'grad-stop';
+        div.innerHTML = `
+            <div class="grad-stop-preview" style="background-color: ${hex};"></div>
+            <input type="color" value="${hex}">
+            <span class="grad-stop-remove">&times;</span>
+        `;
+        
+        const input = div.querySelector('input');
+        const preview = div.querySelector('.grad-stop-preview');
+        input.addEventListener('input', () => {
+            preview.style.backgroundColor = input.value;
+        });
+
+        div.querySelector('.grad-stop-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            div.remove();
+        });
+
+        return div;
+    }
+
+    // Initialize with 2 colors
+    gradStopsContainer.insertBefore(createColorStop('#55FFFF'), addGradStopBtn);
+    gradStopsContainer.insertBefore(createColorStop('#AA00AA'), addGradStopBtn);
+
+    addGradStopBtn.addEventListener('click', () => {
+        const currentStops = gradStopsContainer.querySelectorAll('.grad-stop');
+        if (currentStops.length >= 4) {
+            addGradStopBtn.style.borderColor = 'var(--danger)';
+            setTimeout(() => addGradStopBtn.style.borderColor = '', 500);
+            return;
+        }
+        gradStopsContainer.insertBefore(createColorStop('#FFFFFF'), addGradStopBtn);
+    });
+
     document.getElementById('applyGradBtn').addEventListener('click', () => {
         const text = document.getElementById('gradText').value;
         if (!text) return;
         
-        const startColor = document.getElementById('gradStart').value;
-        const endColor = document.getElementById('gradEnd').value;
-        const isBold = document.getElementById('gradBold').checked;
+        const inputs = gradStopsContainer.querySelectorAll('input[type="color"]');
+        const colors = Array.from(inputs).map(input => input.value);
         
-        const gradientCode = generateGradient(text, startColor, endColor, isBold);
+        const gradientCode = generateMultiGradient(text, colors, isGradBold);
         insertAtCursor(metaContentInput, gradientCode);
         updatePreview();
     });
 
-    function generateGradient(text, startHex, endHex, bold) {
-        // Simple linear interpolation
-        const r1 = parseInt(startHex.substring(1,3), 16);
-        const g1 = parseInt(startHex.substring(3,5), 16);
-        const b1 = parseInt(startHex.substring(5,7), 16);
-        
-        const r2 = parseInt(endHex.substring(1,3), 16);
-        const g2 = parseInt(endHex.substring(3,5), 16);
-        const b2 = parseInt(endHex.substring(5,7), 16);
+    function generateMultiGradient(text, colors, bold) {
+        if (colors.length < 2) return text;
         
         let result = "";
         const len = text.length;
+        if (len <= 1) return `&#${colors[0].substring(1).toUpperCase()}${bold ? '&l' : ''}${text}`;
+
+        const segmentLength = (len - 1) / (colors.length - 1);
         
         for (let i = 0; i < len; i++) {
-            const ratio = len > 1 ? i / (len - 1) : 0;
+            const segmentIndex = Math.min(Math.floor(i / segmentLength), colors.length - 2);
+            const segmentStart = segmentIndex * segmentLength;
+            const ratio = (i - segmentStart) / segmentLength;
+            
+            const startHex = colors[segmentIndex];
+            const endHex = colors[segmentIndex + 1];
+            
+            const r1 = parseInt(startHex.substring(1,3), 16);
+            const g1 = parseInt(startHex.substring(3,5), 16);
+            const b1 = parseInt(startHex.substring(5,7), 16);
+            
+            const r2 = parseInt(endHex.substring(1,3), 16);
+            const g2 = parseInt(endHex.substring(3,5), 16);
+            const b2 = parseInt(endHex.substring(5,7), 16);
+            
             const r = Math.round(r1 + (r2 - r1) * ratio);
             const g = Math.round(g1 + (g2 - g1) * ratio);
             const b = Math.round(b1 + (b2 - b1) * ratio);
             
-            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            const hex = ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
             
-            // Format: &#RRGGBB
             result += `&#${hex.toUpperCase()}`;
             if (bold) result += "&l";
             result += text[i];
@@ -803,6 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 metaModal.classList.add('hidden');
                 metaModal.style.display = 'none';
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to add metadata");
             }
@@ -890,7 +1139,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Expose User Actions
-    window.removeUserMeta = async (uuid, type, priority, value) => {
+    window.removeUserMeta = async (uuid, type, priority, encodedValue) => {
+        const value = decodeURIComponent(encodedValue);
         if (!confirm(`Remove this ${type}?`)) return;
         try {
             const res = await fetch(`${state.apiUrl}/users/${uuid}/nodes`, {
@@ -900,6 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.ok) {
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to remove metadata");
             }
@@ -916,8 +1167,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ type: 'INHERITANCE', key: group })
             });
             if (res.ok) {
-                // Refresh using stored UUID
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to remove group");
             }
@@ -934,6 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.ok) {
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to remove permission");
             }
@@ -955,6 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.ok) {
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to add group");
             }
@@ -976,6 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (res.ok) {
                 if (state.currentProfileUuid) performUserSearch(state.currentProfileUuid);
+                fetchAuditLogs();
             } else {
                 alert("Failed to add permission");
             }

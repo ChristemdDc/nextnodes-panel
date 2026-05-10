@@ -9,9 +9,9 @@ class AuthService {
     this.session = null;
     this.user = null;
     this.rateLimiter = new RateLimiter();
-    console.log('🔑 AuthService: Inicializando...');
+    console.log('AuthService: Inicializando...');
     this.initSession();
-    console.log('🔑 AuthService: Sesión cargada:', this.isAuthenticated() ? 'SÍ' : 'NO');
+    console.log('AuthService: Sesión cargada:', this.isAuthenticated() ? 'SÍ' : 'NO');
   }
 
   /**
@@ -455,5 +455,5 @@ window.authService = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   window.authService = new AuthService();
-  console.log('🔑 AuthService: Instancia global creada');
+  console.log('AuthService: Instancia global creada');
 });

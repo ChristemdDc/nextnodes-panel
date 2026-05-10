@@ -257,6 +257,30 @@ body::after {
 }
 
 .mini-status.offline { background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+.mini-status.online  { background: var(--success); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); animation: pulse-green 2s infinite; }
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
+  50%       { box-shadow: 0 0 14px rgba(34, 197, 94, 0.8); }
+}
+
+.sidebar-toggle:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.mini-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+.mini-status.offline { background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
 .mini-status.online { background: var(--success); box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
 
 .brand-icon {
@@ -640,6 +664,10 @@ main > div:not(.top-navbar):not(.footer) {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Buttons */
 .btn {
   padding: 0.5rem 1rem;
@@ -873,6 +901,251 @@ input:focus {
     background: #444;
 }
 
+/* Multi-Stop Gradient Tool */
+.grad-tool-wrapper {
+  background: #18181b;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.grad-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grad-text-input {
+  flex: 1;
+  background: var(--bg-dark);
+  border: 1px solid #333;
+  color: #fff;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.grad-text-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.grad-toggle-btn {
+  width: 28px;
+  height: 28px;
+  background: #2a2a2e;
+  border: 1px solid #333;
+  color: #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.grad-toggle-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.grad-apply-btn {
+  padding: 0.3rem 0.8rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.grad-stops-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.grad-stop {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+  flex-shrink: 0;
+}
+
+.grad-stop:hover {
+  transform: translateY(-2px);
+  border-color: #fff;
+  z-index: 2;
+}
+
+.grad-stop input[type="color"] {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.grad-stop-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+}
+
+/* ── Utility ──────────────────────────── */
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+}
+
+/* ── User Profile Cards ──────────────────────────── */
+.profile-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-head {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  image-rendering: pixelated;
+  border: 2px solid var(--border);
+}
+
+.profile-name {
+  margin: 0 0 0.2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-uuid {
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.profile-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 700px) {
+  .profile-grid-2 { grid-template-columns: 1fr; }
+}
+
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.profile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+.profile-card-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-list {
+  list-style: none;
+  padding: 0.75rem 1.25rem;
+  margin: 0;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-meta-grid {
+  list-style: none;
+  padding: 0.75rem 1.25rem;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.grad-stop-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.grad-stop:hover .grad-stop-remove {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.grad-add-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px dashed #555;
+  background: transparent;
+  color: #555;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.grad-add-btn:hover {
+  border-color: #777;
+  color: #777;
+}
+
 /* Footer */
 .footer {
   background: transparent;
@@ -976,6 +1249,9 @@ input:focus {
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
+  background: var(--bg-card);
+  z-index: 1;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .modal-header h2 {

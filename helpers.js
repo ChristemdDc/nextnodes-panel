@@ -357,7 +357,7 @@ function requireAuth() {
 function debugLog(label, data) {
   // Usar una variable global en lugar de process.env (no disponible en navegador)
   if (window.__DEBUG__ || (typeof CONFIG !== 'undefined' && CONFIG.DEBUG)) {
-    console.log(`🔍 [${label}]`, data);
+    console.log(`[${label}]`, data);
   }
 }
 
@@ -456,4 +456,4 @@ animationStyles.textContent = `
 `;
 document.head.appendChild(animationStyles);
 
-console.log('✅ Helpers functions cargadas');
+console.log('Helpers functions cargadas');
